@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(node --version)",
+      "PowerShell(npm --version)",
+      "PowerShell(gh --version)",
+      "Bash(git init *)",
+      "Bash(git config *)",
+      "Bash(GCM_INTERACTIVE=never GIT_TERMINAL_PROMPT=0 timeout 15 git credential fill)",
+      "Bash(git add *)",
+      "Bash(git commit -m 'Intel Surveillance field ops platform demo — admin dashboard + technician app *)"
+    ]
+  }
+}
