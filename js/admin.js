@@ -22,15 +22,19 @@ const AdminView = (() => {
      ============================================================ */
 
   const COPILOT_PROMPTS = [
+    'What quotes are waiting on me?',
     'Who\'s been late this week?',
     'Which jobs are at risk?',
     'How is the Meridian project tracking?',
     'Revenue and unpaid invoices?',
-    'Draft a follow-up email to Radford',
     'Where is my crew right now?',
   ];
 
   const COPILOT_ANSWERS = [
+    {
+      match: /quote|approv|proposal/i,
+      html: '__QUOTES__',
+    },
     {
       match: /late|slack|on.?time|showed up/i,
       html: `
@@ -122,6 +126,22 @@ const AdminView = (() => {
     <p>In the full build I'm connected to every part of your business — time clocks, GPS, job progress, inventory, invoices, your monitoring stations, and your sales pipeline.</p>
     <p>Try one of the suggestions below, or ask things like <i>"compare this month to last"</i>, <i>"who should I send to the jewelry store job?"</i>, or <i>"approve the panel purchase order."</i></p>`;
 
+  function quotesAnswerHtml() {
+    const pending = pendingQuotes();
+    if (!pending.length) return '<p>Nothing waiting — all drafted quotes have been handled. New ones will queue for your approval as the AI drafts them.</p>';
+    return `
+      <p>${pending.length} AI-drafted quote${pending.length > 1 ? 's are' : ' is'} waiting for your sign-off:</p>
+      <table class="mini-table">
+        <tr><th>Quote</th><th>For</th><th>Total</th></tr>
+        ${pending.map(q => `<tr><td>${q.id}</td><td>${escapeHtml(q.company)} — ${escapeHtml(q.title)}</td><td class="num">${q.total}</td></tr>`).join('')}
+      </table>
+      <p>You can approve them right here:</p>
+      <div style="display:flex;flex-wrap:wrap;gap:6px">
+        ${pending.map(q => `<button class="btn green" style="font-size:.72rem;padding:6px 10px" onclick="AdminView.approveQuote('${q.id}')">Send ${q.id}</button>`).join('')}
+      </div>
+      <p class="ai-reco" style="margin-top:10px">The Patapsco lead has opened both follow-ups and clicked pricing — send Q-1042 today while intent is high.</p>`;
+  }
+
   function copilotAsk(q) {
     AppState.copilotLog.push({ role: 'user', html: escapeHtml(q) });
     saveState();
@@ -132,7 +152,8 @@ const AdminView = (() => {
       const found = COPILOT_ANSWERS.find(a => a.match.test(q));
       let html = found ? found.html : COPILOT_FALLBACK;
       html = html.replace('__REVENUE_CHART__', sparkBars(DemoData.trends.revenueK, DemoData.trends.weeks))
-                 .replace('__NOW__', nowTimeString());
+                 .replace('__NOW__', nowTimeString())
+                 .replace('__QUOTES__', quotesAnswerHtml());
       AppState.copilotLog.push({ role: 'ai', html });
       copilotThinking = false;
       saveState();
@@ -170,6 +191,7 @@ const AdminView = (() => {
             <div class="cp-msg ai">
               <p>Morning, William. Quick read on today:</p>
               <p>• 9 techs clocked in — <b>1 late arrival flagged</b> (James, 47 min, Meridian)<br>
+                 • <b>3 quotes ($12,650) are waiting for your approval</b> — ask me about them<br>
                  • Radford walkthrough at 1 PM → invoice auto-drafts on sign-off<br>
                  • 1 job needs attention: <b>Brandywine inspection isn't booked</b><br>
                  • Osprey Marine is 24 days overdue on $6,240</p>
@@ -280,7 +302,7 @@ const AdminView = (() => {
      AI daily brief (typed)
      ============================================================ */
 
-  const DAILY_BRIEF = 'Good morning, William. 9 of 10 techs are clocked in and GPS-verified. One exception: James O\'Neal arrived 47 minutes late at Meridian — that\'s his 4th this month, costing you about $91 in paid-but-not-worked time. Meridian is 62% done and forecast to finish 3 days early if arrivals hold. Radford\'s final walkthrough is at 1 PM; the invoice will draft itself on sign-off. One action needed: approve the Brandywine inspection request before Wednesday.';
+  const DAILY_BRIEF = 'Good morning, William. 9 of 10 techs are clocked in and GPS-verified. One exception: James O\'Neal arrived 47 minutes late at Meridian — that\'s his 4th this month, costing you about $91 in paid-but-not-worked time. Meridian is 62% done and forecast to finish 3 days early if arrivals hold. Radford\'s final walkthrough is at 1 PM; the invoice will draft itself on sign-off. Waiting on you: three AI-drafted quotes worth $12,650, and the Brandywine inspection request needs approval before Wednesday.';
 
   function typeBrief() {
     const el = document.getElementById('brief-text');
@@ -343,6 +365,90 @@ const AdminView = (() => {
           <b>Hours</b> ${r.hours.toFixed(1)} &nbsp;·&nbsp; <b>Materials</b> ${r.materials.length ? r.materials.map(escapeHtml).join(', ') : 'none logged'} &nbsp;·&nbsp; <b>Photos</b> ${r.photos || 0} &nbsp;·&nbsp; <b>Issues</b> ${escapeHtml(r.issues)}
         </div>
       </div>`;
+  }
+
+  /* ============================================================
+     Quote approvals
+     ============================================================ */
+
+  function pendingQuotes() { return getQuotes().filter(q => q.status === 'pending'); }
+
+  function quoteCard(q, compact) {
+    return `
+      <div class="quote-row">
+        <div class="q-head">
+          <div>
+            <b>${escapeHtml(q.company)}</b>
+            <div class="q-title">${escapeHtml(q.title)} · ${escapeHtml(q.contact)}</div>
+          </div>
+          <div class="q-total num">${q.total}</div>
+        </div>
+        <div class="q-src">${icon('spark', 11)} ${escapeHtml(q.source)}</div>
+        ${compact ? '' : `
+        <table class="mini-table">
+          ${q.lines.map(l => `<tr><td>${escapeHtml(l.d)}</td><td class="num" style="text-align:right;white-space:nowrap">${l.a}</td></tr>`).join('')}
+        </table>`}
+        <div class="q-actions">
+          ${q.status === 'pending' ? `
+            <button class="btn green" onclick="AdminView.approveQuote('${q.id}')">Approve & send</button>
+            <button class="btn ghost" onclick="AdminView.holdQuote('${q.id}')">Hold</button>
+            <span class="q-margin">${escapeHtml(q.margin)}</span>
+          ` : q.status === 'sent'
+            ? `<span class="badge green">Sent to customer</span><span class="q-margin">AI tracks opens & follows up in 3 days</span>`
+            : `<span class="badge gray">On hold</span>
+               <button class="link-btn" style="font-size:.72rem" onclick="AdminView.approveQuote('${q.id}')">Approve & send</button>`}
+        </div>
+      </div>`;
+  }
+
+  function quoteApprovalsCard(compact) {
+    const pending = pendingQuotes();
+    const list = compact ? pending : getQuotes();
+    const totalPending = '$' + pending.reduce((a, q) => a + parseFloat(q.total.replace(/[$,]/g, '')), 0).toLocaleString();
+    return `
+      <div class="card">
+        <h3>
+          <span>${icon('invoice', 15, 'h3-ic')} Quote approvals</span>
+          ${pending.length
+            ? `<span class="badge amber">${pending.length} awaiting · ${totalPending}</span>`
+            : '<span class="badge green">All clear</span>'}
+        </h3>
+        <p style="font-size:.76rem;color:var(--muted);line-height:1.55;margin:-6px 0 4px">
+          AI drafts quotes from site surveys, field-report upsell flags, and fault patterns — nothing goes to a customer until you approve it.
+        </p>
+        ${list.length ? list.map(q => quoteCard(q, compact)).join('')
+          : '<div class="empty-note">No quotes waiting. New drafts land here for your sign-off.</div>'}
+      </div>`;
+  }
+
+  function approveQuote(id) {
+    const q = getQuotes().find(x => x.id === id);
+    if (!q || q.status === 'sent') { App.toast('Quote already sent'); return; }
+    q.status = 'sent';
+    // move the matching pipeline lead to "Quote Sent"
+    const cols = getPipeline();
+    for (let ci = 0; ci < 2; ci++) {
+      const li = cols[ci].leads.findIndex(l => q.company.startsWith(l.company) || l.company.startsWith(q.company.split(' — ')[0]));
+      if (li !== -1) {
+        const lead = cols[ci].leads.splice(li, 1)[0];
+        lead.source = 'Quote ' + q.id + ' sent ' + nowTimeString();
+        lead.ai = 'Quote ' + q.id + ' (' + q.total + ') emailed — AI tracks opens and nudges in 3 days.';
+        cols[2].leads.unshift(lead);
+        break;
+      }
+    }
+    saveState();
+    App.toast(q.id + ' approved — quote emailed to ' + q.contact + ' at ' + q.company);
+    render();
+  }
+
+  function holdQuote(id) {
+    const q = getQuotes().find(x => x.id === id);
+    if (!q) return;
+    q.status = 'held';
+    saveState();
+    App.toast(q.id + ' put on hold — AI will remind you Friday morning');
+    render();
   }
 
   /* ============================================================
@@ -420,6 +526,8 @@ const AdminView = (() => {
               <tbody>${techs.filter(t => t.status !== 'off').slice(0, 6).map(t => techRow(t, true)).join('')}</tbody>
             </table></div>
           </div>
+
+          ${quoteApprovalsCard(true)}
 
           <div class="card project-hero">
             <div class="ph-top">
@@ -694,6 +802,9 @@ const AdminView = (() => {
       { key: 'po',        label: 'Auto purchase orders', desc: 'Send POs without approval when stock dips below minimum' },
     ];
     return `
+      <div style="margin-bottom:16px">
+        ${quoteApprovalsCard(false)}
+      </div>
       <div style="display:flex;justify-content:flex-end;margin-bottom:12px">
         <button class="btn primary" onclick="AdminView.openNewLead()">Add lead</button>
       </div>
@@ -1102,11 +1213,13 @@ const AdminView = (() => {
   };
 
   function renderBell() {
+    const nq = pendingQuotes().length;
     return `
       <div class="bell-wrap">
-        <button class="bell-btn" onclick="AdminView.toggleBell()">${icon('bell', 16)}<span class="bell-count">3</span></button>
+        <button class="bell-btn" onclick="AdminView.toggleBell()">${icon('bell', 16)}<span class="bell-count">${3 + (nq ? 1 : 0)}</span></button>
         ${bellOpen ? `
         <div class="bell-drop">
+          ${nq ? `<div class="bell-item warn" style="cursor:pointer" onclick="AdminView.setSection('sales')"><b>Quotes waiting</b> ${nq} AI-drafted quote${nq > 1 ? 's' : ''} need your approval <span>Today</span></div>` : ''}
           <div class="bell-item danger"><b>Late arrival</b> James O'Neal — 47 min late at Meridian <span>8:47 AM</span></div>
           <div class="bell-item warn"><b>Low stock</b> 2 parts below minimum — PO drafted <span>8:15 AM</span></div>
           <div class="bell-item warn"><b>Overdue invoice</b> Osprey Marine — $6,240, 24 days <span>Today</span></div>
@@ -1195,6 +1308,7 @@ const AdminView = (() => {
     stopTicker,
     // editing API
     adjStock, setJobStatus, adjProgress, addJobNote, advanceLead, markPaid,
+    approveQuote, holdQuote,
     saveNewJob, saveNewPart, saveNewLead,
     openNewJob() { newJobOpen = true; render(); },
     closeNewJob() { newJobOpen = false; render(); },

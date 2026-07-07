@@ -917,3 +917,20 @@ textarea.t-input:focus, input.t-input:focus { outline: none; border-color: #4050
   transition: all .13s;
 }
 .k-advance:hover { border-color: var(--accent); color: var(--accent); border-style: solid; }
+
+/* ============ Quote approvals ============ */
+
+.quote-row { border-top: 1px solid #f0f1f4; padding: 14px 0 12px; }
+.quote-row:last-child { padding-bottom: 2px; }
+.q-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.q-head b { font-size: .84rem; font-weight: 650; }
+.q-title { font-size: .74rem; color: var(--text-2); margin-top: 2px; }
+.q-total { font-size: 1.05rem; font-weight: 700; letter-spacing: -.02em; white-space: nowrap; }
+.q-src {
+  display: inline-flex; align-items: center; gap: 6px; margin: 7px 0 2px;
+  font-size: .7rem; font-weight: 550; color: var(--ai);
+  background: var(--ai-soft); border: 1px solid #ddd9f5; border-radius: 6px; padding: 3px 9px;
+}
+.q-actions { display: flex; align-items: center; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+.q-actions .btn { padding: 6px 12px; font-size: .76rem; }
+.q-margin { font-size: .7rem; color: var(--muted); font-weight: 550; }

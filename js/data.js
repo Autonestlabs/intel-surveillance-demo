@@ -335,6 +335,35 @@ const DemoData = {
     { icon: 'calendar', title: 'Follow-up scheduled', detail: 'Radford Properties — front-desk training session proposed for Thursday after final walkthrough.', time: 'Today 7:30 AM', tag: 'scheduling' },
   ],
 
+  // AI-drafted quotes waiting for owner approval before they go out
+  quotes: [
+    { id: 'Q-1042', company: 'Patapsco Brewing Co.', contact: 'J. Keller',
+      title: 'Burglar alarm + 8-camera CCTV package',
+      source: 'AI-drafted from site survey — lead showing high intent', status: 'pending', margin: '44% margin at this price',
+      lines: [
+        { d: 'DSC PowerSeries Pro panel + 2 keypads', a: '$1,720' },
+        { d: 'Perimeter contacts + glassbreak (taproom & warehouse)', a: '$1,180' },
+        { d: '8× 5MP turret cameras + NVR, installed', a: '$4,300' },
+        { d: 'Labor — 2 techs, 2.5 days', a: '$2,200' },
+      ], total: '$9,400' },
+    { id: 'Q-1043', company: 'First Harbor Bank — Branch 12', contact: 'K. Lawrence',
+      title: 'Camera over night deposit box',
+      source: 'Upsell flagged in M. Rivera\'s field report', status: 'pending', margin: '52% margin at this price',
+      lines: [
+        { d: '5MP low-light turret camera + license', a: '$640' },
+        { d: 'Exterior-rated conduit run + mounting', a: '$510' },
+        { d: 'Labor — 1 tech, half day', a: '$700' },
+      ], total: '$1,850' },
+    { id: 'Q-1044', company: 'Pulaski Metal Works', contact: 'D. Kowalski',
+      title: 'Permanent dock-door contact rework',
+      source: 'AI recommendation — 3rd zone-14 fault in 6 months', status: 'pending', margin: '61% margin at this price',
+      lines: [
+        { d: '2× heavy-duty overhead door contacts, sealed conduit', a: '$460' },
+        { d: 'Rewire + weatherproof junction at loading dock', a: '$340' },
+        { d: 'Labor — 1 tech, 1 day', a: '$600' },
+      ], total: '$1,400' },
+  ],
+
   invoices: [
     { id: 'INV-2148', client: 'First Harbor Bank',    job: 'Branch 12 deposit',   amount: '$7,100',  status: 'paid',    date: 'Jul 2' },
     { id: 'INV-2147', client: 'Calvert Auto Group',   job: 'Keypad service',      amount: '$390',    status: 'paid',    date: 'Jul 2' },
@@ -406,7 +435,13 @@ if (!AppState.data || !AppState.data.jobs) {
     inventory: DemoData.inventory,
     pipeline: DemoData.pipeline,
     invoices: DemoData.invoices,
+    quotes: DemoData.quotes,
   }));
+  saveState();
+}
+// migrate older saved sessions that predate quotes
+if (!AppState.data.quotes) {
+  AppState.data.quotes = JSON.parse(JSON.stringify(DemoData.quotes));
   saveState();
 }
 
@@ -414,6 +449,7 @@ function getJobs()      { return AppState.data.jobs; }
 function getInventory() { return AppState.data.inventory; }
 function getPipeline()  { return AppState.data.pipeline; }
 function getInvoices()  { return AppState.data.invoices; }
+function getQuotes()    { return AppState.data.quotes; }
 
 function resetDemoData() {
   try { localStorage.removeItem(IS_STORE_KEY); } catch (e) {}
