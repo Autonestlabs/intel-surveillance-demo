@@ -4,7 +4,7 @@
    so clock-ins and reports survive a page refresh.
    ============================================================ */
 
-const IS_STORE_KEY = 'intel-surveillance-demo-v1';
+const IS_STORE_KEY = 'intel-surveillance-demo-v2';
 
 const DemoData = {
 
@@ -49,6 +49,7 @@ const DemoData = {
       startDate: 'May 11, 2026', targetDate: 'Aug 14, 2026',
       assigned: ['t2', 't3', 't7', 't10'],
       value: '$186,400',
+      risk: { level: 'watch', reason: '3 late arrivals this week cost ~3.2 crew-hours inside a strict 8–4 site window. AI forecast: still on target if arrivals normalize.' },
       phases: [
         { name: 'Rough-in & cable pulls', done: true },
         { name: 'Fire alarm panel & device install', done: true },
@@ -75,6 +76,7 @@ const DemoData = {
       startDate: 'Jul 6, 2026', targetDate: 'Jul 10, 2026',
       assigned: ['t1', 't9'],
       value: '$14,200',
+      risk: { level: 'ok', reason: 'On schedule. Central-station cutover booked for Thursday.' },
       tasks: [
         { id: 'j2-1', label: 'Replace control panel (DSC PowerSeries Pro)', done: true },
         { id: 'j2-2', label: 'Install 4 hold-up buttons at teller line', done: false },
@@ -94,6 +96,7 @@ const DemoData = {
       startDate: 'Jul 8, 2026', targetDate: 'Jul 9, 2026',
       assigned: ['t4'],
       value: '$9,850',
+      risk: { level: 'ok', reason: 'Materials staged. UL paperwork pre-filled by the system.' },
       tasks: [
         { id: 'j3-1', label: 'Install safe/vault sensors', done: false },
         { id: 'j3-2', label: 'Glassbreak detectors — showroom', done: false },
@@ -112,6 +115,7 @@ const DemoData = {
       startDate: 'Jul 1, 2026', targetDate: 'Jul 7, 2026',
       assigned: ['t4'],
       value: '$18,700',
+      risk: { level: 'ok', reason: 'Final walkthrough today at 1 PM — invoice will auto-generate on sign-off.' },
       tasks: [
         { id: 'j4-1', label: 'Program keypads + fobs (42 users)', done: true },
         { id: 'j4-2', label: 'Door position switches — suite 300', done: true },
@@ -130,6 +134,7 @@ const DemoData = {
       startDate: 'Jul 2, 2026', targetDate: 'Jul 9, 2026',
       assigned: ['t8'],
       value: '$11,300',
+      risk: { level: 'risk', reason: 'AHJ fire inspection not yet scheduled and target is Jul 9. AI drafted the inspection request — needs office approval.' },
       tasks: [
         { id: 'j5-1', label: 'Install horn/strobes — 2nd floor', done: true },
         { id: 'j5-2', label: 'Smoke detectors — suites 210–216', done: false },
@@ -148,6 +153,7 @@ const DemoData = {
       startDate: 'Jul 6, 2026', targetDate: 'Jul 6, 2026',
       assigned: ['t5'],
       value: '$425',
+      risk: { level: 'watch', reason: 'Third call in 6 months for the same zone — AI flagged a probable water-intrusion pattern at the loading dock contact.' },
       tasks: [
         { id: 'j6-1', label: 'Diagnose zone 14 supervisory fault', done: false },
         { id: 'j6-2', label: 'Test all perimeter zones', done: false },
@@ -165,6 +171,7 @@ const DemoData = {
       startDate: 'Jul 13, 2026', targetDate: 'Jul 15, 2026',
       assigned: ['t1'],
       value: '$13,900',
+      risk: { level: 'ok', reason: 'Scheduled next week. NVR and cameras in stock.' },
       tasks: [],
       notes: '',
     },
@@ -207,6 +214,7 @@ const DemoData = {
       startDate: 'Jul 10, 2026', targetDate: 'Jul 10, 2026',
       assigned: ['t7'],
       value: '$4,600',
+      risk: { level: 'ok', reason: 'Friday afternoon slot confirmed with office manager.' },
       tasks: [],
       notes: '',
     },
@@ -219,6 +227,7 @@ const DemoData = {
       hours: 8.0, completion: 'Access control doors 6–8 terminated and tested',
       materials: ['3× HID Signo card readers', '2× door strikes', '450 ft Cat6'],
       issues: 'Door 7 frame required drilling — added 45 min. GC notified.',
+      photos: 2,
       aiSummary: 'Crew completed termination and testing of access control doors 6–8 at Meridian Warehouse. One delay: door 7 frame drilling (+45 min), GC informed. Materials logged. On track for phase completion next week.',
     },
     {
@@ -226,6 +235,7 @@ const DemoData = {
       hours: 7.5, completion: 'Keypads programmed, all 42 user fobs enrolled',
       materials: ['2× PROX fob packs (25)', '1× keypad'],
       issues: 'None.',
+      photos: 3,
       aiSummary: 'Radford Bldg C: all keypads programmed and 42 user fobs enrolled ahead of schedule. No issues. Remaining: final walkthrough with property manager Monday.',
     },
     {
@@ -233,6 +243,7 @@ const DemoData = {
       hours: 3.0, completion: 'Both keypads replaced and tested. Job closed.',
       materials: ['2× DSC HS2LCD keypads'],
       issues: 'None. Customer signed off on site.',
+      photos: 1,
       aiSummary: 'Calvert Auto keypad swap complete — both units replaced, tested, customer signed off. Job closed and billable.',
     },
   ],
@@ -254,7 +265,7 @@ const DemoData = {
     { id: 'a1', level: 'danger', time: '8:47 AM',
       text: 'Late arrival: James O\'Neal clocked in 47 min after scheduled start at Meridian Warehouse (site window 8 AM – 4 PM).' },
     { id: 'a2', level: 'warn', time: '8:15 AM',
-      text: 'Low stock: Honeywell VISTA-21iP panels (3 left, min 4) and Cat6 plenum spools (5 left, min 6).' },
+      text: 'Low stock: Honeywell VISTA-21iP panels (3 left, min 4) and Cat6 plenum spools (5 left, min 6). Draft PO ready for approval.' },
     { id: 'a3', level: 'info', time: '7:58 AM',
       text: 'All Meridian crew except J. O\'Neal on site before 8:00 AM window opened.' },
     { id: 'a4', level: 'warn', time: 'Yesterday',
@@ -267,6 +278,69 @@ const DemoData = {
     { time: '8:30 AM',  jobId: 'j5', techIds: ['t8'],        label: 'Brandywine Medical — smoke detectors, suites 210–216' },
     { time: '9:30 AM',  jobId: 'j6', techIds: ['t5'],        label: 'Pulaski Metals — zone 14 fault (service)' },
     { time: '1:00 PM',  jobId: 'j4', techIds: ['t4'],        label: 'Radford Bldg C — final walkthrough' },
+  ],
+
+  // Week timeline (Mon–Fri) for the dispatch Gantt. day 0 = Monday Jul 6.
+  weekPlan: [
+    { jobId: 'j1', from: 0, to: 4, crew: 'Dana + 3' },
+    { jobId: 'j2', from: 0, to: 3, crew: 'Marcus, Sam' },
+    { jobId: 'j5', from: 0, to: 2, crew: 'Kevin' },
+    { jobId: 'j6', from: 0, to: 0, crew: 'Angela' },
+    { jobId: 'j4', from: 0, to: 0, crew: 'Chris' },
+    { jobId: 'j3', from: 2, to: 3, crew: 'Chris' },
+    { jobId: 'j10', from: 4, to: 4, crew: 'Luis' },
+  ],
+
+  // Business trends (5 weeks)
+  trends: {
+    weeks: ['Jun 8', 'Jun 15', 'Jun 22', 'Jun 29', 'Jul 6'],
+    onTimePct: [78, 82, 74, 85, 91],
+    hoursLost: [6.5, 4.0, 8.2, 3.0, 0.8],
+    revenueK: [74, 91, 68, 102, 88],
+  },
+
+  // Sales pipeline — the automated nurture system
+  pipeline: [
+    { stage: 'New Leads', color: '#2563eb', leads: [
+      { company: 'Chesapeake Storage Group', contact: 'R. Alvarez', value: '$12–18k', source: 'Website form · 2h ago',
+        ai: 'AI intro email sent 12 min after inquiry. Site survey offered.' },
+      { company: 'Dover Fresh Foods', contact: 'M. Okafor', value: '$8–10k', source: 'Google Ads · yesterday',
+        ai: 'AI qualified: cold-storage burglar + temp monitoring. Call scheduled Wed 2 PM.' },
+    ]},
+    { stage: 'AI Nurturing', color: '#7c3aed', leads: [
+      { company: 'Patapsco Brewing Co.', contact: 'J. Keller', value: '$9k est.', source: 'Referral · 6d ago',
+        ai: 'Opened both follow-ups, clicked pricing link. AI recommends a human call today — high intent.' },
+      { company: 'Liberty Row Apartments', contact: 'S. Grant', value: '$26k est.', source: 'Website · 12d ago',
+        ai: 'Third touch scheduled Thursday. Interested in access control for 3 buildings.' },
+    ]},
+    { stage: 'Quote Sent', color: '#d97706', leads: [
+      { company: 'Annandale Surgical Ctr', contact: 'Dr. Liu', value: '$31,200', source: 'Quote sent Jul 1',
+        ai: 'Quote viewed 4× — AI sent a gentle nudge Jul 4. Decision expected this week.' },
+    ]},
+    { stage: 'Won This Month', color: '#059669', leads: [
+      { company: 'First Harbor Bank — Br. 12', contact: 'K. Lawrence', value: '$14,200', source: 'Closed Jul 1',
+        ai: 'Auto-converted to Job J2, crew scheduled, deposit invoice sent & paid.' },
+      { company: 'Hartsdale Self Storage', contact: 'P. Demarco', value: '$13,900', source: 'Closed Jun 30',
+        ai: 'Auto-converted to Job J7. Materials reserved from stock.' },
+    ]},
+  ],
+
+  // Automation activity log
+  automations: [
+    { icon: '📨', title: '12-month check-in sent', detail: 'Ironbound Cold Storage — "How is the system running? Due for annual test." Reply received: booking requested.', time: 'Today 6:00 AM', tag: 'retention' },
+    { icon: '⭐', title: 'Review request sent', detail: 'Calvert Auto Group — Google review link sent after sign-off. ★★★★★ received in 3 hours.', time: 'Jul 2', tag: 'reputation' },
+    { icon: '🚨', title: 'Fault → service ticket', detail: 'Central station reported zone 14 supervisory fault at Pulaski Metals. Service job auto-created and offered to customer for this morning.', time: 'Yesterday 4:22 PM', tag: 'monitoring' },
+    { icon: '🧾', title: 'Invoice auto-generated', detail: 'Calvert Auto Group — $390 service invoice created from the closed job and emailed. Paid online same day.', time: 'Jul 2', tag: 'billing' },
+    { icon: '📦', title: 'Purchase order drafted', detail: 'VISTA-21iP panels below minimum (3 < 4). Draft PO for 6 units queued for your approval.', time: 'Today 8:15 AM', tag: 'inventory' },
+    { icon: '📅', title: 'Follow-up scheduled', detail: 'Radford Properties — front-desk training session proposed for Thursday after final walkthrough.', time: 'Today 7:30 AM', tag: 'scheduling' },
+  ],
+
+  invoices: [
+    { id: 'INV-2148', client: 'First Harbor Bank',    job: 'Branch 12 deposit',   amount: '$7,100',  status: 'paid',    date: 'Jul 2' },
+    { id: 'INV-2147', client: 'Calvert Auto Group',   job: 'Keypad service',      amount: '$390',    status: 'paid',    date: 'Jul 2' },
+    { id: 'INV-2146', client: 'Ironbound Foods',      job: 'Cold storage final',  amount: '$10,700', status: 'sent',    date: 'Jul 1' },
+    { id: 'INV-2145', client: 'Meridian Logistics',   job: 'Warehouse — draw 3',  amount: '$37,280', status: 'sent',    date: 'Jun 30' },
+    { id: 'INV-2141', client: 'Osprey Marine Supply', job: 'CCTV install final',  amount: '$6,240',  status: 'overdue', date: 'Jun 12' },
   ],
 
   // Rough pin positions for the coverage map panel (percent of panel w/h)
@@ -282,6 +356,18 @@ const DemoData = {
     { jobId: 'j8', x: 38, y: 70, state: 'MD' },
     { jobId: 'j4', x: 30, y: 80, state: 'VA' },
   ],
+
+  // Simulated live-activity events (cycled on the dashboard)
+  liveEvents: [
+    { icon: '📦', text: 'Marcus Rivera scanned 2× HID Signo readers at First Harbor Bank' },
+    { icon: '✅', text: 'Dana Whitfield completed "Terminate card readers, doors 9–11" at Meridian' },
+    { icon: '📍', text: 'Angela Park arrived at Pulaski Metals — geofence confirmed' },
+    { icon: '📝', text: 'Chris Boone added a note to Radford Bldg C: "walkthrough moved to 1:30"' },
+    { icon: '📷', text: 'Luis Mendez attached 3 photos — dock bay camera mounts' },
+    { icon: '🧾', text: 'Invoice INV-2149 drafted from Radford walkthrough sign-off' },
+    { icon: '📨', text: 'AI follow-up sent to Patapsco Brewing — pricing questions answered' },
+    { icon: '🔧', text: 'Kevin Drummond marked smoke detectors complete — suites 210–212' },
+  ],
 };
 
 /* ---------- Mutable app state (persisted) ---------- */
@@ -296,8 +382,11 @@ function loadState() {
     techClockInTime: '7:52 AM',
     completedTasks: {},         // taskId -> true
     scannedParts: [],           // {sku, name, jobId, time}
+    photos: [],                 // {jobId, label, time}
     submittedReports: [],       // same shape as DemoData.reports
     chatLog: [],
+    copilotLog: [],             // admin AI copilot transcript
+    autoRules: { checkin12: true, reviews: true, faults: true, invoicing: true, po: false, nurture: true },
   };
 }
 
@@ -330,4 +419,15 @@ function allReports() {
 
 function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+function riskBadge(job) {
+  if (!job.risk) return '';
+  const map = {
+    ok:    ['green', 'On track'],
+    watch: ['amber', 'Watch'],
+    risk:  ['red',   'At risk'],
+  };
+  const [cls, label] = map[job.risk.level] || map.ok;
+  return `<span class="badge ${cls}" title="${escapeHtml(job.risk.reason)}">✦ ${label}</span>`;
 }

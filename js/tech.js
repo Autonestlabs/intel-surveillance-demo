@@ -8,16 +8,19 @@ const TechView = (() => {
   const TECH_ID = 't1'; // demo persona
   let tab = 'today';    // today | jobs | assistant | report
   let openJobId = null;
+  let recState = null;  // null | 'recording' | 'transcribing'
+
+  const VOICE_TRANSCRIPT = 'Finished swapping the panel this morning, all zones tested good. Got two of the four hold-up buttons in at the teller line — the other two need the counter guy to drill the millwork, he\'s coming tomorrow at 8. Vault sensor is mounted but I need the escort to test it, Karen said 9 AM works. Also the branch manager asked about adding a camera over the night deposit box — somebody should quote that.';
 
   /* ---------- AI assistant canned answers ---------- */
   const cannedAnswers = [
     {
       match: /next|appointment|where.*go|schedule/i,
-      reply: 'Your next stop is <b>First Harbor Bank — Branch 12</b> at 2200 N Charles St, Baltimore. You\'re on it now with Sam Whitaker. After completion, nothing else is scheduled today. Tomorrow you\'re at First Harbor again, 8:00 AM.',
+      reply: 'Your next stop is <b>First Harbor Bank — Branch 12</b> at 2200 N Charles St, Baltimore. You\'re on it now with Sam Whitaker. After completion, nothing else is scheduled today. Tomorrow you\'re at First Harbor again, 8:00 AM — the vault-sensor escort is booked for 9:00.',
     },
     {
-      match: /part|stock|inventory|reader|panel/i,
-      reply: 'Warehouse stock right now: DSC PowerSeries Pro panels — <b>6 on hand</b>, HID Signo readers — <b>9 on hand</b>, hold-up buttons — <b>7 on hand</b>. If you need parts staged for tomorrow, I can notify the office.',
+      match: /part|stock|inventory|reader|panel|button/i,
+      reply: 'Warehouse stock right now: DSC PowerSeries Pro panels — <b>6 on hand</b>, HID Signo readers — <b>9 on hand</b>, hold-up buttons — <b>7 on hand</b>. Need something staged for tomorrow? Say the word and I\'ll notify the office.',
     },
     {
       match: /hour|time|week|clock/i,
@@ -25,10 +28,18 @@ const TechView = (() => {
     },
     {
       match: /bank|vault|harbor|job|note/i,
-      reply: 'First Harbor Bank job notes: escort required for vault area (see branch manager Karen L.), old panel must be returned to the office for records, and central-station cutover needs a signal test before you leave. 2 of 4 tasks remain.',
+      reply: 'First Harbor Bank job notes: escort required for vault area (branch manager Karen L. — she confirmed 9 AM tomorrow), old panel goes back to the office for records, and the central-station cutover needs a signal test before you leave Thursday. 2 of 4 tasks remain.',
+    },
+    {
+      match: /code|nfpa|spacing|smoke|regulation|requirement/i,
+      reply: 'Per <b>NFPA 72</b>, smooth-ceiling smoke detector spacing is <b>30 ft on center</b>, max 15 ft from any wall, and within 21 ft of any point on the ceiling. For the bank lobby\'s 12-ft drop ceiling, standard spacing applies — but keep detectors 3 ft from supply diffusers. Want the full code excerpt?',
+    },
+    {
+      match: /log|tell the office|quote|camera/i,
+      reply: '✅ Logged to the job and flagged for the office: <i>"Customer requested a quote — camera over the night deposit box."</i> Sales will see it in the pipeline as an upsell lead on this account.',
     },
   ];
-  const fallbackReply = 'In the full version I\'m connected to your schedule, job notes, inventory, and time records — so you can ask things like "where\'s my next appointment?", "do we have card readers in stock?", or "log that the customer asked for a quote on cameras."';
+  const fallbackReply = 'In the full version I\'m connected to your schedule, job notes, inventory, time records, and code references — ask things like "where\'s my next appointment?", "what\'s the NFPA spacing for smoke detectors?", or "log that the customer wants a camera quote."';
 
   /* ---------- Actions ---------- */
 
@@ -63,20 +74,54 @@ const TechView = (() => {
     render();
   }
 
+  function addPhoto() {
+    const labels = ['Panel wiring — after', 'Teller line button 2', 'Vault sensor mount', 'Cable run — ceiling', 'Old panel (for records)'];
+    const label = labels[AppState.photos.length % labels.length];
+    AppState.photos.unshift({ jobId: openJobId || 'j2', label, time: nowTimeString() });
+    saveState();
+    App.toast('📷 Photo attached to job — synced to office');
+    render();
+  }
+
+  /* ---------- Voice note flow ---------- */
+
+  function startVoice() {
+    recState = 'recording';
+    render();
+    setTimeout(() => {
+      recState = 'transcribing';
+      render();
+      setTimeout(() => {
+        recState = null;
+        AppState.eodDraftNotes = VOICE_TRANSCRIPT;
+        saveState();
+        render();
+        App.toast('✦ Voice note transcribed — review and generate your report');
+      }, 1600);
+    }, 2600);
+  }
+
   function generateSummary() {
     const notes = document.getElementById('eod-notes');
-    const raw = notes ? notes.value.trim() : '';
+    const raw = notes ? notes.value.trim() : (AppState.eodDraftNotes || '');
+    AppState.eodDraftNotes = raw;
     const doneCount = Object.values(AppState.completedTasks).filter(Boolean).length;
     const scans = AppState.scannedParts.length;
-    let summary = 'EOD Summary — ' + techById(TECH_ID).name + ', ' + todayString() + '. ';
-    summary += 'On site at First Harbor Bank — Branch 12 (clocked in ' + (AppState.techClockInTime || '7:52 AM') + ', GPS verified). ';
-    summary += doneCount > 0
-      ? doneCount + ' task' + (doneCount > 1 ? 's' : '') + ' completed today; panel upgrade phase progressing on schedule. '
-      : 'Panel upgrade phase progressing on schedule. ';
-    if (scans > 0) summary += scans + ' part' + (scans > 1 ? 's' : '') + ' scanned to the job and auto-deducted from inventory. ';
-    summary += raw
-      ? 'Tech notes: ' + raw
-      : 'No blocking issues reported. Central-station cutover and signal test planned for tomorrow morning.';
+    const photos = AppState.photos.length;
+    let summary;
+    if (raw === VOICE_TRANSCRIPT) {
+      summary = 'First Harbor Bank — Branch 12, ' + todayString() + ' (M. Rivera, on site ' + (AppState.techClockInTime || '7:52 AM') + ', GPS verified). Panel replacement complete — all zones tested good. Hold-up buttons: 2 of 4 installed; remaining 2 blocked on millwork drilling (carpenter on site tomorrow 8 AM). Vault sensor mounted; test scheduled with escort (Karen L.) 9:00 AM tomorrow. UPSSELL FLAG → customer requested a quote: camera over the night deposit box (routed to sales pipeline).' + (scans ? ' Materials: ' + scans + ' part(s) scanned and deducted.' : '') + (photos ? ' ' + photos + ' photo(s) attached.' : '');
+    } else {
+      summary = 'EOD Summary — ' + techById(TECH_ID).name + ', ' + todayString() + '. On site at First Harbor Bank — Branch 12 (clocked in ' + (AppState.techClockInTime || '7:52 AM') + ', GPS verified). ';
+      summary += doneCount > 0
+        ? doneCount + ' task' + (doneCount > 1 ? 's' : '') + ' completed today; panel upgrade phase progressing on schedule. '
+        : 'Panel upgrade phase progressing on schedule. ';
+      if (scans > 0) summary += scans + ' part' + (scans > 1 ? 's' : '') + ' scanned to the job and auto-deducted from inventory. ';
+      if (photos > 0) summary += photos + ' photo' + (photos > 1 ? 's' : '') + ' attached. ';
+      summary += raw
+        ? 'Tech notes: ' + raw
+        : 'No blocking issues reported. Central-station cutover and signal test planned for Thursday.';
+    }
     AppState.draftSummary = summary;
     saveState();
     render();
@@ -93,10 +138,12 @@ const TechView = (() => {
       hours: 8.0,
       completion: 'Daily report — First Harbor Bank Branch 12',
       materials: AppState.scannedParts.map(p => p.name),
+      photos: AppState.photos.length,
       issues: 'See summary.',
       aiSummary: summary,
     });
     AppState.draftSummary = null;
+    AppState.eodDraftNotes = '';
     saveState();
     App.toast('📤 Report submitted — visible on the office dashboard now');
     tab = 'today';
@@ -121,7 +168,6 @@ const TechView = (() => {
   /* ---------- Renderers ---------- */
 
   function renderClockCard() {
-    const t = techById(TECH_ID);
     const clockedIn = AppState.techClockedIn;
     return `
       <div class="clock-card">
@@ -162,8 +208,10 @@ const TechView = (() => {
       ${myJobs.map(renderJobCard).join('')}
       <div class="t-section-title">Quick Actions</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-        <button class="btn ghost" style="background:rgba(255,255,255,.07);color:#e2e8f0;justify-content:center" onclick="TechView.setTab('report')">📝 End-of-Day Report</button>
-        <button class="btn ghost" style="background:rgba(255,255,255,.07);color:#e2e8f0;justify-content:center" onclick="TechView.scanPart()">📷 Scan a Part</button>
+        <button class="btn ghost t-quick" onclick="TechView.setTab('report')">📝 EOD Report</button>
+        <button class="btn ghost t-quick" onclick="TechView.scanPart()">📷 Scan a Part</button>
+        <button class="btn ghost t-quick" onclick="TechView.addPhoto()">🖼️ Add Photo</button>
+        <button class="btn ghost t-quick" onclick="TechView.setTab('assistant')">✦ Ask AI</button>
       </div>
       ${AppState.scannedParts.length ? `
         <div class="t-section-title">Parts Scanned Today (${AppState.scannedParts.length})</div>
@@ -172,10 +220,17 @@ const TechView = (() => {
             <span class="s-ico">📦</span>
             <div><b>${escapeHtml(p.name)}</b><span>${p.sku} · ${p.time} · auto-deducted from inventory</span></div>
           </div>`).join('')}` : ''}
+      ${AppState.photos.length ? `
+        <div class="t-section-title">Photos Today (${AppState.photos.length})</div>
+        <div class="photo-grid">
+          ${AppState.photos.slice(0, 6).map(p => `
+            <div class="photo-thumb"><span>📷</span><b>${escapeHtml(p.label)}</b></div>`).join('')}
+        </div>` : ''}
     `;
   }
 
   function renderJobDetail(j) {
+    const photos = AppState.photos.filter(p => p.jobId === j.id);
     return `
       <div class="t-detail">
         <button class="t-back" onclick="TechView.closeJob()">‹ Back to jobs</button>
@@ -192,13 +247,20 @@ const TechView = (() => {
           </div>`;
         }).join('') : '<div class="empty-note">No task checklist for this job.</div>'}
 
-        <div class="t-section-title">Materials</div>
-        <button class="btn primary block" onclick="TechView.scanPart()">📷 Scan Part Barcode</button>
+        <div class="t-section-title">Materials & Photos</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <button class="btn primary" style="justify-content:center" onclick="TechView.scanPart()">📷 Scan Part</button>
+          <button class="btn ghost t-quick" onclick="TechView.addPhoto()">🖼️ Add Photo</button>
+        </div>
         ${AppState.scannedParts.filter(p => p.jobId === j.id).map(p => `
           <div class="scan-row" style="margin-top:7px">
             <span class="s-ico">📦</span>
             <div><b>${escapeHtml(p.name)}</b><span>${p.sku} · ${p.time}</span></div>
           </div>`).join('')}
+        ${photos.length ? `
+        <div class="photo-grid" style="margin-top:8px">
+          ${photos.map(p => `<div class="photo-thumb"><span>📷</span><b>${escapeHtml(p.label)}</b></div>`).join('')}
+        </div>` : ''}
 
         ${j.notes ? `
         <div class="t-section-title">Job Notes from Office</div>
@@ -220,15 +282,15 @@ const TechView = (() => {
   function renderAssistant() {
     const suggestions = [
       'Where\'s my next appointment?',
-      'Do we have card readers in stock?',
-      'How many hours this week?',
-      'Notes for the bank job?',
+      'NFPA smoke detector spacing?',
+      'Do we have hold-up buttons in stock?',
+      'Log: customer wants a camera quote',
     ];
     return `
       <div class="t-section-title" style="margin-top:4px">AI Assistant</div>
       <div class="ai-panel" style="margin-bottom:14px">
         <div class="ai-tag">✦ Intel Assistant</div>
-        <p>Ask me about your schedule, job notes, parts stock, or your hours. I can also log notes to a job for the office — hands-free.</p>
+        <p>Ask about your schedule, job notes, parts stock, code requirements, or your hours. I can log notes to a job for the office — hands-free.</p>
       </div>
       <div class="chat-log" id="chat-scroll" style="max-height:340px;overflow-y:auto">
         ${AppState.chatLog.map(m => `<div class="chat-msg ${m.role}">${m.role === 'ai' ? m.text : escapeHtml(m.text)}</div>`).join('')}
@@ -244,19 +306,41 @@ const TechView = (() => {
 
   function renderReport() {
     const doneCount = Object.values(AppState.completedTasks).filter(Boolean).length;
+
+    let voiceBlock;
+    if (recState === 'recording') {
+      voiceBlock = `
+        <div class="voice-card recording">
+          <div class="rec-dot"></div>
+          <div class="waveform">${Array.from({ length: 24 }, (_, i) => `<i style="animation-delay:${(i * 67) % 800}ms"></i>`).join('')}</div>
+          <div class="voice-status">Listening… talk like you'd talk to a coworker</div>
+        </div>`;
+    } else if (recState === 'transcribing') {
+      voiceBlock = `
+        <div class="voice-card">
+          <div class="voice-status"><span class="tdot"></span><span class="tdot"></span><span class="tdot"></span> &nbsp;Transcribing your voice note…</div>
+        </div>`;
+    } else {
+      voiceBlock = `
+        <button class="btn block voice-btn" onclick="TechView.startVoice()">🎙️ Dictate Voice Note</button>`;
+    }
+
     return `
       <div class="t-section-title" style="margin-top:4px">End-of-Day Report</div>
       <div class="td-sub" style="color:var(--slate-400);font-size:.78rem;line-height:1.6;margin-bottom:14px">
-        Type (or dictate) rough notes — the AI turns them into a clean report for the office. Tasks completed and parts scanned today are attached automatically.
+        Talk or type rough notes — the AI turns them into a clean report for the office. Tasks, parts, photos, and verified hours attach automatically.
       </div>
       <div class="scan-row"><span class="s-ico">✅</span><div><b>${doneCount} tasks completed today</b><span>attached automatically</span></div></div>
       <div class="scan-row"><span class="s-ico">📦</span><div><b>${AppState.scannedParts.length} parts scanned</b><span>attached automatically</span></div></div>
+      <div class="scan-row"><span class="s-ico">🖼️</span><div><b>${AppState.photos.length} photos</b><span>attached automatically</span></div></div>
       <div class="scan-row"><span class="s-ico">⏱️</span><div><b>Clock-in ${AppState.techClockInTime || '7:52 AM'} · GPS verified</b><span>attached automatically</span></div></div>
 
-      <div class="t-section-title">Your Notes</div>
-      <textarea class="t-input" id="eod-notes" rows="4" placeholder="e.g. finished teller line buttons, vault sensor needs the escort tomorrow morning, customer asked about adding cameras...">${AppState.eodDraftNotes ? escapeHtml(AppState.eodDraftNotes) : ''}</textarea>
+      <div class="t-section-title">Voice or Text</div>
+      ${voiceBlock}
       <div style="height:10px"></div>
-      <button class="btn primary block" onclick="TechView.generateSummary()">✦ Generate AI Summary</button>
+      <textarea class="t-input" id="eod-notes" rows="5" placeholder="…or type rough notes here">${AppState.eodDraftNotes ? escapeHtml(AppState.eodDraftNotes) : ''}</textarea>
+      <div style="height:10px"></div>
+      <button class="btn primary block" onclick="TechView.generateSummary()">✦ Generate AI Report</button>
 
       ${AppState.draftSummary ? `
         <div class="ai-panel" style="margin-top:14px">
@@ -287,8 +371,8 @@ const TechView = (() => {
         <div class="stage-note">
           <span class="note-pill">TECHNICIAN VIEW</span>
           <h3>What your techs see</h3>
-          <p>Each technician gets this app on a company phone. Clock-ins are GPS-verified against the job site, parts are scanned as they're used, and end-of-day reports take 30 seconds with AI doing the writing.</p>
-          <p style="margin-top:10px">Everything they do here shows up live on your office dashboard.</p>
+          <p>Each technician gets this app on a company phone. Clock-ins are GPS-verified against the job site, parts are scanned as they're used, and end-of-day reports take 30 seconds — they talk, AI writes.</p>
+          <p style="margin-top:10px">Try it: dictate a voice note in <b>Report</b>, then check the office dashboard.</p>
           <button class="btn ghost" onclick="App.go('admin')">→ See the Office Dashboard</button>
           <button class="btn ghost" style="margin-top:8px" onclick="App.go('login')">‹ Back to start</button>
         </div>
@@ -322,6 +406,8 @@ const TechView = (() => {
     clockToggle,
     toggleTask,
     scanPart,
+    addPhoto,
+    startVoice,
     generateSummary,
     submitReport,
     ask,

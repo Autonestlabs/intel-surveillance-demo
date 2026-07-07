@@ -39,13 +39,13 @@ const App = (() => {
             <button class="role-card admin" onclick="App.go('admin')">
               <div class="icon">🖥️</div>
               <h2>Office Dashboard</h2>
-              <p>What you and your partner see: live GPS-verified crew board, late-arrival alerts, job progress, AI field reports, timesheets, and inventory.</p>
+              <p>Live GPS-verified crew board, late-arrival alerts with payroll cost, AI daily brief, job risk scoring, sales pipeline on autopilot — plus <b>Intel AI</b>: ask your business anything.</p>
               <span class="cta">Enter as William (Owner) →</span>
             </button>
             <button class="role-card tech" onclick="App.go('tech')">
               <div class="icon">📱</div>
               <h2>Technician App</h2>
-              <p>What your techs see on a company phone: GPS clock-in, today's jobs, task checklists, barcode part scanning, and 30-second AI end-of-day reports.</p>
+              <p>GPS clock-in, today's jobs, barcode part scanning, photos — and end-of-day reports where the tech <b>talks and AI writes</b>. Plus an assistant that knows the schedule, stock, and fire code.</p>
               <span class="cta">Enter as Marcus (Senior Tech) →</span>
             </button>
           </div>
@@ -64,6 +64,7 @@ const App = (() => {
 
   function route() {
     const h = location.hash.replace(/^#\/?/, '');
+    if (h !== 'admin' && typeof AdminView !== 'undefined') AdminView.stopTicker();
     if (h === 'admin') AdminView.render();
     else if (h === 'tech') TechView.render();
     else renderLogin();
