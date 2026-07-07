@@ -338,6 +338,7 @@ const DemoData = {
   // AI-drafted quotes waiting for owner approval before they go out
   quotes: [
     { id: 'Q-1042', company: 'Patapsco Brewing Co.', contact: 'J. Keller',
+      address: '1701 Union Ave, Baltimore, MD 21211',
       title: 'Burglar alarm + 8-camera CCTV package',
       source: 'AI-drafted from site survey — lead showing high intent', status: 'pending', margin: '44% margin at this price',
       lines: [
@@ -347,6 +348,7 @@ const DemoData = {
         { d: 'Labor — 2 techs, 2.5 days', a: '$2,200' },
       ], total: '$9,400' },
     { id: 'Q-1043', company: 'First Harbor Bank — Branch 12', contact: 'K. Lawrence',
+      address: '2200 N Charles St, Baltimore, MD 21218',
       title: 'Camera over night deposit box',
       source: 'Upsell flagged in M. Rivera\'s field report', status: 'pending', margin: '52% margin at this price',
       lines: [
@@ -355,6 +357,7 @@ const DemoData = {
         { d: 'Labor — 1 tech, half day', a: '$700' },
       ], total: '$1,850' },
     { id: 'Q-1044', company: 'Pulaski Metal Works', contact: 'D. Kowalski',
+      address: '88 Jacobus Ave, Kearny, NJ 07032',
       title: 'Permanent dock-door contact rework',
       source: 'AI recommendation — 3rd zone-14 fault in 6 months', status: 'pending', margin: '61% margin at this price',
       lines: [

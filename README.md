@@ -51,13 +51,18 @@ Or just open `index.html` in a browser.
 ## Structure
 
 ```
-index.html        entry point
+index.html        entry point (loads jsPDF from CDN for quote PDFs)
 css/styles.css    all styling
+js/icons.js       inline SVG icon set
 js/data.js        demo dataset + persisted state helpers
+js/quotedoc.js    on-screen quote document + client-side PDF generation
 js/app.js         shell + routing (login / admin / tech)
 js/admin.js       office dashboard
 js/tech.js        technician phone app
 ```
+
+Quotes can be opened as a branded, viewable document and downloaded as a real
+`.pdf` (generated in-browser with jsPDF — the only external dependency, from CDN).
 
 ## Roadmap (full build)
 

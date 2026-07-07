@@ -13,6 +13,7 @@ const AdminView = (() => {
   let copilotOpen = false;
   let copilotThinking = false;
   let bellOpen = false;
+  let quoteDocId = null;
   let tickerHandle = null;
   let feedEvents = [];         // live activity feed entries
   let eventIdx = 0;
@@ -389,6 +390,8 @@ const AdminView = (() => {
           ${q.lines.map(l => `<tr><td>${escapeHtml(l.d)}</td><td class="num" style="text-align:right;white-space:nowrap">${l.a}</td></tr>`).join('')}
         </table>`}
         <div class="q-actions">
+          <button class="btn ghost" onclick="AdminView.viewQuote('${q.id}')">${icon('search', 13)} View</button>
+          <button class="btn ghost" onclick="AdminView.downloadQuote('${q.id}')">${icon('file', 13)} PDF</button>
           ${q.status === 'pending' ? `
             <button class="btn green" onclick="AdminView.approveQuote('${q.id}')">Approve & send</button>
             <button class="btn ghost" onclick="AdminView.holdQuote('${q.id}')">Hold</button>
@@ -397,6 +400,85 @@ const AdminView = (() => {
             ? `<span class="badge green">Sent to customer</span><span class="q-margin">AI tracks opens & follows up in 3 days</span>`
             : `<span class="badge gray">On hold</span>
                <button class="link-btn" style="font-size:.72rem" onclick="AdminView.approveQuote('${q.id}')">Approve & send</button>`}
+        </div>
+      </div>`;
+  }
+
+  /* On-screen quote document (mirrors the PDF) */
+  function renderQuoteDocModal() {
+    if (!quoteDocId) return '';
+    const q = getQuotes().find(x => x.id === quoteDocId);
+    if (!q) return '';
+    const m = QuoteDoc.meta();
+    return `
+      <div class="modal-overlay" onclick="if(event.target===this)AdminView.closeQuoteDoc()">
+        <div class="modal quote-modal">
+          <div class="qm-toolbar">
+            <div class="qm-tools-left">
+              <span class="badge ${q.status === 'sent' ? 'green' : q.status === 'held' ? 'gray' : 'amber'}">
+                ${q.status === 'sent' ? 'Sent to customer' : q.status === 'held' ? 'On hold' : 'Awaiting approval'}
+              </span>
+            </div>
+            <div class="qm-tools-right">
+              <button class="btn primary" onclick="AdminView.downloadQuote('${q.id}')">${icon('file', 14)} Download PDF</button>
+              ${q.status !== 'sent' ? `<button class="btn green" onclick="AdminView.approveQuote('${q.id}');AdminView.closeQuoteDoc()">Approve & send</button>` : ''}
+              <button class="m-close" onclick="AdminView.closeQuoteDoc()">${icon('x', 15)}</button>
+            </div>
+          </div>
+          <div class="quote-doc">
+            <div class="qd-bar"></div>
+            <div class="qd-head">
+              <div>
+                <div class="qd-co">${QuoteDoc.COMPANY.name}</div>
+                <div class="qd-co-sub">${QuoteDoc.COMPANY.tagline}</div>
+                <div class="qd-co-sub">${QuoteDoc.COMPANY.licensed}</div>
+                <div class="qd-co-sub">${QuoteDoc.COMPANY.contact}</div>
+              </div>
+              <div class="qd-quote">
+                <div class="qd-quote-word">QUOTE</div>
+                <div class="qd-quote-meta"><span>Quote #</span>${q.id}</div>
+                <div class="qd-quote-meta"><span>Date</span>${m.date}</div>
+                <div class="qd-quote-meta"><span>Valid until</span>${m.valid}</div>
+              </div>
+            </div>
+            <div class="qd-divider"></div>
+            <div class="qd-parties">
+              <div>
+                <div class="qd-label">Prepared for</div>
+                <div class="qd-party-name">${escapeHtml(q.company)}</div>
+                <div class="qd-party-line">Attn: ${escapeHtml(q.contact)}</div>
+                ${q.address ? `<div class="qd-party-line">${escapeHtml(q.address)}</div>` : ''}
+              </div>
+              <div style="text-align:right">
+                <div class="qd-label">Scope of work</div>
+                <div class="qd-party-line" style="max-width:230px;margin-left:auto">${escapeHtml(q.title)}</div>
+              </div>
+            </div>
+            <table class="qd-table">
+              <thead><tr><th>Description</th><th class="r">Amount</th></tr></thead>
+              <tbody>
+                ${q.lines.map(l => `<tr><td>${escapeHtml(l.d)}</td><td class="r num">${l.a}</td></tr>`).join('')}
+              </tbody>
+            </table>
+            <div class="qd-total-row">
+              <div class="qd-total-box">
+                <span>Project total</span>
+                <b class="num">${q.total}</b>
+              </div>
+            </div>
+            <div class="qd-terms">
+              <div class="qd-label">Terms</div>
+              <p>${QuoteDoc.TERMS}</p>
+            </div>
+            <div class="qd-sign">
+              <div><div class="qd-sign-line"></div><span>Authorized signature</span></div>
+              <div><div class="qd-sign-line"></div><span>Date</span></div>
+            </div>
+            <div class="qd-foot">
+              <span>${QuoteDoc.COMPANY.name} · ${QuoteDoc.COMPANY.contact}</span>
+              <span>Prepared by AutoNestLabs</span>
+            </div>
+          </div>
         </div>
       </div>`;
   }
@@ -449,6 +531,10 @@ const AdminView = (() => {
     saveState();
     App.toast(q.id + ' put on hold — AI will remind you Friday morning');
     render();
+  }
+
+  function downloadQuote(id) {
+    QuoteDoc.download(getQuotes().find(x => x.id === id));
   }
 
   /* ============================================================
@@ -1277,6 +1363,7 @@ const AdminView = (() => {
       ${renderNewJobModal()}
       ${renderNewPartModal()}
       ${renderNewLeadModal()}
+      ${renderQuoteDocModal()}
       <div class="demo-banner">Demo · Intel Surveillance Field Platform by AutoNestLabs</div>
     `;
 
@@ -1308,7 +1395,9 @@ const AdminView = (() => {
     stopTicker,
     // editing API
     adjStock, setJobStatus, adjProgress, addJobNote, advanceLead, markPaid,
-    approveQuote, holdQuote,
+    approveQuote, holdQuote, downloadQuote,
+    viewQuote(id) { quoteDocId = id; render(); },
+    closeQuoteDoc() { quoteDocId = null; render(); },
     saveNewJob, saveNewPart, saveNewLead,
     openNewJob() { newJobOpen = true; render(); },
     closeNewJob() { newJobOpen = false; render(); },
