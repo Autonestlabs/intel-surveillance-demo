@@ -36,7 +36,7 @@ const TechView = (() => {
     },
     {
       match: /log|tell the office|quote|camera/i,
-      reply: '✅ Logged to the job and flagged for the office: <i>"Customer requested a quote — camera over the night deposit box."</i> Sales will see it in the pipeline as an upsell lead on this account.',
+      reply: 'Logged to the job and flagged for the office: <i>"Customer requested a quote — camera over the night deposit box."</i> Sales will see it in the pipeline as an upsell lead on this account.',
     },
   ];
   const fallbackReply = 'In the full version I\'m connected to your schedule, job notes, inventory, time records, and code references — ask things like "where\'s my next appointment?", "what\'s the NFPA spacing for smoke detectors?", or "log that the customer wants a camera quote."';
@@ -47,11 +47,11 @@ const TechView = (() => {
     if (AppState.techClockedIn) {
       AppState.techClockedIn = false;
       AppState.techClockOutTime = nowTimeString();
-      App.toast('⏱️ Clocked out at ' + AppState.techClockOutTime + ' — 8.1 hrs logged today');
+      App.toast('Clocked out at ' + AppState.techClockOutTime + ' — 8.1 hrs logged today');
     } else {
       AppState.techClockedIn = true;
       AppState.techClockInTime = nowTimeString();
-      App.toast('✅ Clocked in — GPS verified on site (within 150 ft)');
+      App.toast('Clocked in — GPS verified on site, within 150 ft');
     }
     saveState();
     render();
@@ -70,7 +70,7 @@ const TechView = (() => {
       sku: part.sku, name: part.name, jobId: openJobId || 'j2', time: nowTimeString(),
     });
     saveState();
-    App.toast('📦 Scanned: ' + part.name + ' — logged to job & deducted from inventory');
+    App.toast('Scanned: ' + part.name + ' — logged to job & deducted from inventory');
     render();
   }
 
@@ -79,7 +79,7 @@ const TechView = (() => {
     const label = labels[AppState.photos.length % labels.length];
     AppState.photos.unshift({ jobId: openJobId || 'j2', label, time: nowTimeString() });
     saveState();
-    App.toast('📷 Photo attached to job — synced to office');
+    App.toast('Photo attached to job — synced to office');
     render();
   }
 
@@ -96,7 +96,7 @@ const TechView = (() => {
         AppState.eodDraftNotes = VOICE_TRANSCRIPT;
         saveState();
         render();
-        App.toast('✦ Voice note transcribed — review and generate your report');
+        App.toast('Voice note transcribed — review and generate your report');
       }, 1600);
     }, 2600);
   }
@@ -110,7 +110,7 @@ const TechView = (() => {
     const photos = AppState.photos.length;
     let summary;
     if (raw === VOICE_TRANSCRIPT) {
-      summary = 'First Harbor Bank — Branch 12, ' + todayString() + ' (M. Rivera, on site ' + (AppState.techClockInTime || '7:52 AM') + ', GPS verified). Panel replacement complete — all zones tested good. Hold-up buttons: 2 of 4 installed; remaining 2 blocked on millwork drilling (carpenter on site tomorrow 8 AM). Vault sensor mounted; test scheduled with escort (Karen L.) 9:00 AM tomorrow. UPSSELL FLAG → customer requested a quote: camera over the night deposit box (routed to sales pipeline).' + (scans ? ' Materials: ' + scans + ' part(s) scanned and deducted.' : '') + (photos ? ' ' + photos + ' photo(s) attached.' : '');
+      summary = 'First Harbor Bank — Branch 12, ' + todayString() + ' (M. Rivera, on site ' + (AppState.techClockInTime || '7:52 AM') + ', GPS verified). Panel replacement complete — all zones tested good. Hold-up buttons: 2 of 4 installed; remaining 2 blocked on millwork drilling (carpenter on site tomorrow 8 AM). Vault sensor mounted; test scheduled with escort (Karen L.) 9:00 AM tomorrow. UPSELL FLAG → customer requested a quote: camera over the night deposit box (routed to sales pipeline).' + (scans ? ' Materials: ' + scans + ' part(s) scanned and deducted.' : '') + (photos ? ' ' + photos + ' photo(s) attached.' : '');
     } else {
       summary = 'EOD Summary — ' + techById(TECH_ID).name + ', ' + todayString() + '. On site at First Harbor Bank — Branch 12 (clocked in ' + (AppState.techClockInTime || '7:52 AM') + ', GPS verified). ';
       summary += doneCount > 0
@@ -145,7 +145,7 @@ const TechView = (() => {
     AppState.draftSummary = null;
     AppState.eodDraftNotes = '';
     saveState();
-    App.toast('📤 Report submitted — visible on the office dashboard now');
+    App.toast('Report submitted — visible on the office dashboard now');
     tab = 'today';
     render();
   }
@@ -176,13 +176,13 @@ const TechView = (() => {
             <div class="c-time">${clockedIn ? (AppState.techClockInTime || '7:52 AM') : '—'}</div>
             <div class="c-sub">${clockedIn ? 'Clocked in · First Harbor Bank — Branch 12' : 'Not clocked in'}</div>
           </div>
-          <span class="badge ${clockedIn ? 'green' : 'gray'}"><span class="dot"></span>${clockedIn ? 'ON THE CLOCK' : 'OFF'}</span>
+          <span class="badge ${clockedIn ? 'green' : 'gray'}"><span class="dot"></span>${clockedIn ? 'On the clock' : 'Off'}</span>
         </div>
-        <div class="gps-line">${clockedIn
-          ? '📍 GPS verified — within 150 ft of job site · geofence active'
-          : '📍 GPS ready — location is captured at clock-in for verification'}</div>
+        <div class="gps-line">${icon('pin', 13)} ${clockedIn
+          ? 'GPS verified — within 150 ft of job site · geofence active'
+          : 'GPS ready — location is captured at clock-in for verification'}</div>
         <button class="btn ${clockedIn ? 'red' : 'green'} block lg" onclick="TechView.clockToggle()">
-          ${clockedIn ? 'Clock Out' : 'Clock In'}
+          ${clockedIn ? 'Clock out' : 'Clock in'}
         </button>
       </div>`;
   }
@@ -194,9 +194,9 @@ const TechView = (() => {
           <b>${escapeHtml(j.name)}</b>
           ${App.statusBadge(j.status)}
         </div>
-        <div class="tj-addr">📍 ${escapeHtml(j.address)}</div>
-        <div class="progress-track" style="margin-bottom:8px"><div class="progress-fill ${j.progress === 100 ? 'green' : ''}" style="width:${j.progress}%"></div></div>
-        <div class="tj-window">⏰ ${escapeHtml(j.window)}</div>
+        <div class="tj-addr">${icon('pin', 12)} ${escapeHtml(j.address)}</div>
+        <div class="progress-track" style="margin-bottom:4px"><div class="progress-fill ${j.progress === 100 ? 'green' : ''}" style="width:${j.progress}%"></div></div>
+        <div class="tj-window">${icon('clock', 12)} ${escapeHtml(j.window)}</div>
       </div>`;
   }
 
@@ -204,27 +204,27 @@ const TechView = (() => {
     const myJobs = DemoData.jobs.filter(j => j.assigned.includes(TECH_ID) && j.status !== 'completed');
     return `
       ${renderClockCard()}
-      <div class="t-section-title">Today's Assignments</div>
+      <div class="t-section-title">Today's assignments</div>
       ${myJobs.map(renderJobCard).join('')}
-      <div class="t-section-title">Quick Actions</div>
+      <div class="t-section-title">Quick actions</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-        <button class="btn ghost t-quick" onclick="TechView.setTab('report')">📝 EOD Report</button>
-        <button class="btn ghost t-quick" onclick="TechView.scanPart()">📷 Scan a Part</button>
-        <button class="btn ghost t-quick" onclick="TechView.addPhoto()">🖼️ Add Photo</button>
-        <button class="btn ghost t-quick" onclick="TechView.setTab('assistant')">✦ Ask AI</button>
+        <button class="btn t-quick" onclick="TechView.setTab('report')">${icon('file', 14)} EOD report</button>
+        <button class="btn t-quick" onclick="TechView.scanPart()">${icon('scan', 14)} Scan a part</button>
+        <button class="btn t-quick" onclick="TechView.addPhoto()">${icon('camera', 14)} Add photo</button>
+        <button class="btn t-quick" onclick="TechView.setTab('assistant')">${icon('spark', 14)} Ask AI</button>
       </div>
       ${AppState.scannedParts.length ? `
-        <div class="t-section-title">Parts Scanned Today (${AppState.scannedParts.length})</div>
+        <div class="t-section-title">Parts scanned today (${AppState.scannedParts.length})</div>
         ${AppState.scannedParts.slice(0, 4).map(p => `
           <div class="scan-row scan-flash">
-            <span class="s-ico">📦</span>
+            <span class="s-ico">${icon('box', 15)}</span>
             <div><b>${escapeHtml(p.name)}</b><span>${p.sku} · ${p.time} · auto-deducted from inventory</span></div>
           </div>`).join('')}` : ''}
       ${AppState.photos.length ? `
-        <div class="t-section-title">Photos Today (${AppState.photos.length})</div>
+        <div class="t-section-title">Photos today (${AppState.photos.length})</div>
         <div class="photo-grid">
           ${AppState.photos.slice(0, 6).map(p => `
-            <div class="photo-thumb"><span>📷</span><b>${escapeHtml(p.label)}</b></div>`).join('')}
+            <div class="photo-thumb">${icon('camera', 16)}<b>${escapeHtml(p.label)}</b></div>`).join('')}
         </div>` : ''}
     `;
   }
@@ -233,9 +233,9 @@ const TechView = (() => {
     const photos = AppState.photos.filter(p => p.jobId === j.id);
     return `
       <div class="t-detail">
-        <button class="t-back" onclick="TechView.closeJob()">‹ Back to jobs</button>
+        <button class="t-back" onclick="TechView.closeJob()">${icon('chevronLeft', 13)} Back to jobs</button>
         <h2>${escapeHtml(j.name)}</h2>
-        <div class="td-sub">${escapeHtml(j.system)}<br>📍 ${escapeHtml(j.address)}<br>⏰ ${escapeHtml(j.window)}</div>
+        <div class="td-sub">${escapeHtml(j.system)}<br>${escapeHtml(j.address)}<br>${escapeHtml(j.window)}</div>
         ${App.statusBadge(j.status)}
 
         <div class="t-section-title">Tasks</div>
@@ -243,28 +243,28 @@ const TechView = (() => {
           const done = t.done || AppState.completedTasks[t.id];
           return `
           <div class="t-task ${done ? 'done' : ''}" onclick="TechView.toggleTask('${t.id}')">
-            <span class="cb">✓</span><span>${escapeHtml(t.label)}</span>
+            <span class="cb">${icon('check', 11)}</span><span>${escapeHtml(t.label)}</span>
           </div>`;
         }).join('') : '<div class="empty-note">No task checklist for this job.</div>'}
 
-        <div class="t-section-title">Materials & Photos</div>
+        <div class="t-section-title">Materials & photos</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-          <button class="btn primary" style="justify-content:center" onclick="TechView.scanPart()">📷 Scan Part</button>
-          <button class="btn ghost t-quick" onclick="TechView.addPhoto()">🖼️ Add Photo</button>
+          <button class="btn primary" style="justify-content:center" onclick="TechView.scanPart()">${icon('scan', 14)} Scan part</button>
+          <button class="btn t-quick" onclick="TechView.addPhoto()">${icon('camera', 14)} Add photo</button>
         </div>
         ${AppState.scannedParts.filter(p => p.jobId === j.id).map(p => `
           <div class="scan-row" style="margin-top:7px">
-            <span class="s-ico">📦</span>
+            <span class="s-ico">${icon('box', 15)}</span>
             <div><b>${escapeHtml(p.name)}</b><span>${p.sku} · ${p.time}</span></div>
           </div>`).join('')}
         ${photos.length ? `
         <div class="photo-grid" style="margin-top:8px">
-          ${photos.map(p => `<div class="photo-thumb"><span>📷</span><b>${escapeHtml(p.label)}</b></div>`).join('')}
+          ${photos.map(p => `<div class="photo-thumb">${icon('camera', 16)}<b>${escapeHtml(p.label)}</b></div>`).join('')}
         </div>` : ''}
 
         ${j.notes ? `
-        <div class="t-section-title">Job Notes from Office</div>
-        <div class="ai-panel" style="border-color:rgba(148,163,184,.25);background:rgba(255,255,255,.04)">
+        <div class="t-section-title">Job notes from office</div>
+        <div class="ai-panel" style="border-left-color:#40506e">
           <p>${escapeHtml(j.notes)}</p>
         </div>` : ''}
       </div>`;
@@ -274,7 +274,7 @@ const TechView = (() => {
     if (openJobId) return renderJobDetail(jobById(openJobId));
     const myJobs = DemoData.jobs.filter(j => j.assigned.includes(TECH_ID));
     return `
-      <div class="t-section-title" style="margin-top:4px">My Jobs</div>
+      <div class="t-section-title" style="margin-top:4px">My jobs</div>
       ${myJobs.map(renderJobCard).join('')}
     `;
   }
@@ -287,9 +287,9 @@ const TechView = (() => {
       'Log: customer wants a camera quote',
     ];
     return `
-      <div class="t-section-title" style="margin-top:4px">AI Assistant</div>
+      <div class="t-section-title" style="margin-top:4px">AI assistant</div>
       <div class="ai-panel" style="margin-bottom:14px">
-        <div class="ai-tag">✦ Intel Assistant</div>
+        <div class="ai-tag">${icon('spark', 12)} Intel Assistant</div>
         <p>Ask about your schedule, job notes, parts stock, code requirements, or your hours. I can log notes to a job for the office — hands-free.</p>
       </div>
       <div class="chat-log" id="chat-scroll" style="max-height:340px;overflow-y:auto">
@@ -300,7 +300,7 @@ const TechView = (() => {
       </div>
       <div class="chat-input-row">
         <input class="t-input" id="chat-input" placeholder="Ask anything…" onkeydown="if(event.key==='Enter')TechView.askFromInput()" />
-        <button class="btn primary" onclick="TechView.askFromInput()">➤</button>
+        <button class="btn primary" onclick="TechView.askFromInput()">${icon('send', 14)}</button>
       </div>`;
   }
 
@@ -322,40 +322,40 @@ const TechView = (() => {
         </div>`;
     } else {
       voiceBlock = `
-        <button class="btn block voice-btn" onclick="TechView.startVoice()">🎙️ Dictate Voice Note</button>`;
+        <button class="btn block voice-btn" onclick="TechView.startVoice()">${icon('mic', 15)} Dictate voice note</button>`;
     }
 
     return `
-      <div class="t-section-title" style="margin-top:4px">End-of-Day Report</div>
-      <div class="td-sub" style="color:var(--slate-400);font-size:.78rem;line-height:1.6;margin-bottom:14px">
+      <div class="t-section-title" style="margin-top:4px">End-of-day report</div>
+      <div class="td-sub" style="color:#7d8590;font-size:.76rem;line-height:1.6;margin-bottom:14px">
         Talk or type rough notes — the AI turns them into a clean report for the office. Tasks, parts, photos, and verified hours attach automatically.
       </div>
-      <div class="scan-row"><span class="s-ico">✅</span><div><b>${doneCount} tasks completed today</b><span>attached automatically</span></div></div>
-      <div class="scan-row"><span class="s-ico">📦</span><div><b>${AppState.scannedParts.length} parts scanned</b><span>attached automatically</span></div></div>
-      <div class="scan-row"><span class="s-ico">🖼️</span><div><b>${AppState.photos.length} photos</b><span>attached automatically</span></div></div>
-      <div class="scan-row"><span class="s-ico">⏱️</span><div><b>Clock-in ${AppState.techClockInTime || '7:52 AM'} · GPS verified</b><span>attached automatically</span></div></div>
+      <div class="scan-row"><span class="s-ico">${icon('check', 14)}</span><div><b>${doneCount} tasks completed today</b><span>attached automatically</span></div></div>
+      <div class="scan-row"><span class="s-ico">${icon('box', 14)}</span><div><b>${AppState.scannedParts.length} parts scanned</b><span>attached automatically</span></div></div>
+      <div class="scan-row"><span class="s-ico">${icon('camera', 14)}</span><div><b>${AppState.photos.length} photos</b><span>attached automatically</span></div></div>
+      <div class="scan-row"><span class="s-ico">${icon('clock', 14)}</span><div><b>Clock-in ${AppState.techClockInTime || '7:52 AM'} · GPS verified</b><span>attached automatically</span></div></div>
 
-      <div class="t-section-title">Voice or Text</div>
+      <div class="t-section-title">Voice or text</div>
       ${voiceBlock}
       <div style="height:10px"></div>
       <textarea class="t-input" id="eod-notes" rows="5" placeholder="…or type rough notes here">${AppState.eodDraftNotes ? escapeHtml(AppState.eodDraftNotes) : ''}</textarea>
       <div style="height:10px"></div>
-      <button class="btn primary block" onclick="TechView.generateSummary()">✦ Generate AI Report</button>
+      <button class="btn primary block" onclick="TechView.generateSummary()">${icon('spark', 14)} Generate AI report</button>
 
       ${AppState.draftSummary ? `
         <div class="ai-panel" style="margin-top:14px">
-          <div class="ai-tag">✦ AI-Generated Report</div>
+          <div class="ai-tag">${icon('spark', 12)} AI-generated report</div>
           <p>${escapeHtml(AppState.draftSummary)}</p>
         </div>
         <div style="height:10px"></div>
-        <button class="btn green block lg" onclick="TechView.submitReport()">📤 Submit to Office</button>
+        <button class="btn green block lg" onclick="TechView.submitReport()">${icon('send', 15)} Submit to office</button>
       ` : ''}
     `;
   }
 
-  function tabButton(id, icon, label) {
+  function tabButton(id, ico, label) {
     return `<button class="${tab === id ? 'active' : ''}" onclick="TechView.setTab('${id}')">
-      <span class="t-ico">${icon}</span>${label}</button>`;
+      ${icon(ico, 18)}${label}</button>`;
   }
 
   function render() {
@@ -373,8 +373,8 @@ const TechView = (() => {
           <h3>What your techs see</h3>
           <p>Each technician gets this app on a company phone. Clock-ins are GPS-verified against the job site, parts are scanned as they're used, and end-of-day reports take 30 seconds — they talk, AI writes.</p>
           <p style="margin-top:10px">Try it: dictate a voice note in <b>Report</b>, then check the office dashboard.</p>
-          <button class="btn ghost" onclick="App.go('admin')">→ See the Office Dashboard</button>
-          <button class="btn ghost" style="margin-top:8px" onclick="App.go('login')">‹ Back to start</button>
+          <button class="btn" onclick="App.go('admin')">Office dashboard ${icon('arrowRight', 13)}</button>
+          <button class="btn" style="margin-top:8px" onclick="App.go('login')">${icon('chevronLeft', 13)} Back to start</button>
         </div>
         <div class="phone">
           <div class="notch"><i></i></div>
@@ -384,19 +384,19 @@ const TechView = (() => {
                 <span class="avatar" style="background:${t.avatarColor}">${initials(t.name)}</span>
                 <div><b>${t.name}</b><span>${t.role} · Intel Surveillance</span></div>
               </div>
-              <span class="badge ${AppState.techClockedIn ? 'green' : 'gray'}" style="font-size:.62rem">${AppState.techClockedIn ? '● ON CLOCK' : '○ OFF'}</span>
+              <span class="badge ${AppState.techClockedIn ? 'green' : 'gray'}" style="font-size:.6rem">${AppState.techClockedIn ? 'On clock' : 'Off'}</span>
             </div>
             ${body}
           </div>
           <div class="tabbar">
-            ${tabButton('today', '🏠', 'Today')}
-            ${tabButton('jobs', '🗂️', 'Jobs')}
-            ${tabButton('assistant', '✦', 'Assistant')}
-            ${tabButton('report', '📝', 'Report')}
+            ${tabButton('today', 'home', 'Today')}
+            ${tabButton('jobs', 'briefcase', 'Jobs')}
+            ${tabButton('assistant', 'spark', 'Assistant')}
+            ${tabButton('report', 'file', 'Report')}
           </div>
         </div>
       </div>
-      <div class="demo-banner">DEMO — Intel Surveillance Field Platform by AutoNestLabs</div>
+      <div class="demo-banner">Demo · Intel Surveillance Field Platform by AutoNestLabs</div>
     `;
   }
 

@@ -327,12 +327,12 @@ const DemoData = {
 
   // Automation activity log
   automations: [
-    { icon: '📨', title: '12-month check-in sent', detail: 'Ironbound Cold Storage — "How is the system running? Due for annual test." Reply received: booking requested.', time: 'Today 6:00 AM', tag: 'retention' },
-    { icon: '⭐', title: 'Review request sent', detail: 'Calvert Auto Group — Google review link sent after sign-off. ★★★★★ received in 3 hours.', time: 'Jul 2', tag: 'reputation' },
-    { icon: '🚨', title: 'Fault → service ticket', detail: 'Central station reported zone 14 supervisory fault at Pulaski Metals. Service job auto-created and offered to customer for this morning.', time: 'Yesterday 4:22 PM', tag: 'monitoring' },
-    { icon: '🧾', title: 'Invoice auto-generated', detail: 'Calvert Auto Group — $390 service invoice created from the closed job and emailed. Paid online same day.', time: 'Jul 2', tag: 'billing' },
-    { icon: '📦', title: 'Purchase order drafted', detail: 'VISTA-21iP panels below minimum (3 < 4). Draft PO for 6 units queued for your approval.', time: 'Today 8:15 AM', tag: 'inventory' },
-    { icon: '📅', title: 'Follow-up scheduled', detail: 'Radford Properties — front-desk training session proposed for Thursday after final walkthrough.', time: 'Today 7:30 AM', tag: 'scheduling' },
+    { icon: 'mail', title: '12-month check-in sent', detail: 'Ironbound Cold Storage — "How is the system running? Due for annual test." Reply received: booking requested.', time: 'Today 6:00 AM', tag: 'retention' },
+    { icon: 'star', title: 'Review request sent', detail: 'Calvert Auto Group — Google review link sent after sign-off. 5-star review received in 3 hours.', time: 'Jul 2', tag: 'reputation' },
+    { icon: 'alert', title: 'Fault → service ticket', detail: 'Central station reported zone 14 supervisory fault at Pulaski Metals. Service job auto-created and offered to customer for this morning.', time: 'Yesterday 4:22 PM', tag: 'monitoring' },
+    { icon: 'invoice', title: 'Invoice auto-generated', detail: 'Calvert Auto Group — $390 service invoice created from the closed job and emailed. Paid online same day.', time: 'Jul 2', tag: 'billing' },
+    { icon: 'box', title: 'Purchase order drafted', detail: 'VISTA-21iP panels below minimum (3 < 4). Draft PO for 6 units queued for your approval.', time: 'Today 8:15 AM', tag: 'inventory' },
+    { icon: 'calendar', title: 'Follow-up scheduled', detail: 'Radford Properties — front-desk training session proposed for Thursday after final walkthrough.', time: 'Today 7:30 AM', tag: 'scheduling' },
   ],
 
   invoices: [
@@ -359,14 +359,14 @@ const DemoData = {
 
   // Simulated live-activity events (cycled on the dashboard)
   liveEvents: [
-    { icon: '📦', text: 'Marcus Rivera scanned 2× HID Signo readers at First Harbor Bank' },
-    { icon: '✅', text: 'Dana Whitfield completed "Terminate card readers, doors 9–11" at Meridian' },
-    { icon: '📍', text: 'Angela Park arrived at Pulaski Metals — geofence confirmed' },
-    { icon: '📝', text: 'Chris Boone added a note to Radford Bldg C: "walkthrough moved to 1:30"' },
-    { icon: '📷', text: 'Luis Mendez attached 3 photos — dock bay camera mounts' },
-    { icon: '🧾', text: 'Invoice INV-2149 drafted from Radford walkthrough sign-off' },
-    { icon: '📨', text: 'AI follow-up sent to Patapsco Brewing — pricing questions answered' },
-    { icon: '🔧', text: 'Kevin Drummond marked smoke detectors complete — suites 210–212' },
+    { icon: 'scan', text: 'Marcus Rivera scanned 2× HID Signo readers at First Harbor Bank' },
+    { icon: 'check', text: 'Dana Whitfield completed "Terminate card readers, doors 9–11" at Meridian' },
+    { icon: 'pin', text: 'Angela Park arrived at Pulaski Metals — geofence confirmed' },
+    { icon: 'file', text: 'Chris Boone added a note to Radford Bldg C: "walkthrough moved to 1:30"' },
+    { icon: 'camera', text: 'Luis Mendez attached 3 photos — dock bay camera mounts' },
+    { icon: 'invoice', text: 'Invoice INV-2149 drafted from Radford walkthrough sign-off' },
+    { icon: 'mail', text: 'AI follow-up sent to Patapsco Brewing — pricing questions answered' },
+    { icon: 'check', text: 'Kevin Drummond marked smoke detectors complete — suites 210–212' },
   ],
 };
 
@@ -429,5 +429,5 @@ function riskBadge(job) {
     risk:  ['red',   'At risk'],
   };
   const [cls, label] = map[job.risk.level] || map.ok;
-  return `<span class="badge ${cls}" title="${escapeHtml(job.risk.reason)}">✦ ${label}</span>`;
+  return `<span class="badge ${cls}" title="${escapeHtml(job.risk.reason)}">${label}</span>`;
 }
