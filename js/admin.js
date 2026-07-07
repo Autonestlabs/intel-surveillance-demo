@@ -354,8 +354,8 @@ const AdminView = (() => {
     const working = techs.filter(t => t.status !== 'off');
     const onSite = techs.filter(t => t.status === 'on-site').length;
     const late = techs.filter(t => t.status === 'late').length;
-    const activeJobs = DemoData.jobs.filter(j => j.status === 'in-progress').length;
-    const scheduled = DemoData.jobs.filter(j => j.status === 'scheduled').length;
+    const activeJobs = getJobs().filter(j => j.status === 'in-progress').length;
+    const scheduled = getJobs().filter(j => j.status === 'scheduled').length;
     const reports = allReports();
     const big = jobById('j1');
     const tr = DemoData.trends;
@@ -560,12 +560,13 @@ const AdminView = (() => {
       { id: 'scheduled', label: 'Scheduled' },
       { id: 'completed', label: 'Completed' },
     ];
-    let jobs = DemoData.jobs;
+    let jobs = getJobs();
     if (jobFilter !== 'all') jobs = jobs.filter(j => j.status === jobFilter);
 
     return `
       <div class="pill-row">
         ${filters.map(f => `<button class="pill ${jobFilter === f.id ? 'active' : ''}" onclick="AdminView.setJobFilter('${f.id}')">${f.label}</button>`).join('')}
+        <button class="btn primary" style="margin-left:auto" onclick="AdminView.openNewJob()">New job</button>
       </div>
       <div class="card">
         <div class="table-wrap"><table class="data">
@@ -634,15 +635,19 @@ const AdminView = (() => {
     return `
       <div class="grid-2">
         <div class="card">
-          <h3>Warehouse stock</h3>
+          <h3><span>Warehouse stock — editable</span> <button class="btn ghost" onclick="AdminView.openNewPart()">Add part</button></h3>
           <div class="table-wrap"><table class="data">
             <thead><tr><th>Part</th><th>SKU</th><th class="r">Stock</th><th class="r">Used today</th><th>Status</th></tr></thead>
             <tbody>
-              ${DemoData.inventory.map(i => `
+              ${getInventory().map(i => `
                 <tr>
                   <td style="font-weight:600;font-size:.8rem">${escapeHtml(i.name)}</td>
-                  <td class="num" style="font-size:.72rem;color:var(--muted)">${i.sku}</td>
-                  <td class="num r" style="font-weight:650">${i.stock}</td>
+                  <td class="num" style="font-size:.72rem;color:var(--muted)">${escapeHtml(i.sku)}</td>
+                  <td class="r"><div class="stepper sm">
+                    <button onclick="AdminView.adjStock('${escapeHtml(i.sku)}', -1)">−</button>
+                    <span class="num">${i.stock}</span>
+                    <button onclick="AdminView.adjStock('${escapeHtml(i.sku)}', 1)">+</button>
+                  </div></td>
                   <td class="num r">${i.usedToday}</td>
                   <td>${i.stock < i.min ? '<span class="badge red">Low · PO drafted</span>' : '<span class="badge green">OK</span>'}</td>
                 </tr>`).join('')}
@@ -689,17 +694,22 @@ const AdminView = (() => {
       { key: 'po',        label: 'Auto purchase orders', desc: 'Send POs without approval when stock dips below minimum' },
     ];
     return `
+      <div style="display:flex;justify-content:flex-end;margin-bottom:12px">
+        <button class="btn primary" onclick="AdminView.openNewLead()">Add lead</button>
+      </div>
       <div class="kanban">
-        ${DemoData.pipeline.map(col => `
+        ${getPipeline().map((col, ci) => `
           <div class="k-col">
             <div class="k-head"><span><span class="k-dot" style="background:${col.color}"></span>${col.stage}</span><span class="k-count">${col.leads.length}</span></div>
-            ${col.leads.map(l => `
+            ${col.leads.map((l, li) => `
               <div class="k-card">
                 <b>${escapeHtml(l.company)}</b>
                 <div class="k-meta">${escapeHtml(l.contact)} · <b>${escapeHtml(l.value)}</b></div>
                 <div class="k-src">${escapeHtml(l.source)}</div>
                 <div class="k-ai">${icon('spark', 12)}<span>${escapeHtml(l.ai)}</span></div>
+                ${ci < 3 ? `<button class="k-advance" onclick="AdminView.advanceLead(${ci}, ${li})">Move to ${getPipeline()[ci + 1].stage.toLowerCase()} ${icon('arrowRight', 11)}</button>` : ''}
               </div>`).join('')}
+            ${!col.leads.length ? '<div class="empty-note" style="padding:8px 2px">No leads in this stage.</div>' : ''}
           </div>`).join('')}
       </div>
 
@@ -729,12 +739,14 @@ const AdminView = (() => {
             <div class="table-wrap"><table class="data">
               <thead><tr><th>Invoice</th><th>Client</th><th class="r">Amount</th><th>Status</th></tr></thead>
               <tbody>
-                ${DemoData.invoices.map(iv => `
+                ${getInvoices().map(iv => `
                   <tr>
                     <td class="num" style="font-size:.74rem">${iv.id}<div style="color:var(--muted);font-size:.66rem;margin-top:1px">${iv.date}</div></td>
                     <td style="font-size:.78rem">${escapeHtml(iv.client)}<div style="font-size:.68rem;color:var(--muted);margin-top:1px">${escapeHtml(iv.job)}</div></td>
                     <td class="num r" style="font-weight:650">${iv.amount}</td>
-                    <td>${iv.status === 'paid' ? '<span class="badge green">Paid</span>' : iv.status === 'sent' ? '<span class="badge blue">Sent</span>' : '<span class="badge red">Overdue 24d</span>'}</td>
+                    <td>${iv.status === 'paid' ? '<span class="badge green">Paid</span>'
+                        : (iv.status === 'sent' ? '<span class="badge blue">Sent</span>' : '<span class="badge red">Overdue 24d</span>')
+                          + ` <button class="link-btn" style="font-size:.68rem" onclick="AdminView.markPaid('${iv.id}')">Mark paid</button>`}</td>
                   </tr>`).join('')}
               </tbody>
             </table></div>
@@ -816,7 +828,19 @@ const AdminView = (() => {
             <div class="kv"><b>Crew</b><span>${j.assigned.map(id => techById(id).name).join(', ') || '—'}</span></div>
           </div>
           <div class="m-section">
-            <h4>Progress — ${j.progress}%</h4>
+            <h4>Status & progress — editable</h4>
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px">
+              <select class="m-select" onchange="AdminView.setJobStatus('${j.id}', this.value)">
+                <option value="scheduled" ${j.status === 'scheduled' ? 'selected' : ''}>Scheduled</option>
+                <option value="in-progress" ${j.status === 'in-progress' ? 'selected' : ''}>In progress</option>
+                <option value="completed" ${j.status === 'completed' ? 'selected' : ''}>Completed</option>
+              </select>
+              <div class="stepper">
+                <button onclick="AdminView.adjProgress('${j.id}', -10)">−</button>
+                <span class="num">${j.progress}%</span>
+                <button onclick="AdminView.adjProgress('${j.id}', 10)">+</button>
+              </div>
+            </div>
             <div class="progress-track"><div class="progress-fill ${j.progress === 100 ? 'green' : ''}" style="width:${j.progress}%"></div></div>
           </div>
           ${j.tasks.length ? `
@@ -827,10 +851,232 @@ const AdminView = (() => {
               return `<div class="task-line ${done ? 'done' : ''}"><span class="tl-mark ${done ? 'done' : 'open'}">${done ? icon('check', 10) : ''}</span> ${escapeHtml(t.label)}</div>`;
             }).join('')}
           </div>` : ''}
-          ${j.notes ? `<div class="m-section"><h4>Site notes</h4><p style="font-size:.83rem;line-height:1.65;color:var(--text-2)">${escapeHtml(j.notes)}</p></div>` : ''}
+          <div class="m-section"><h4>Site notes</h4>
+            ${j.notes ? `<p style="font-size:.83rem;line-height:1.65;color:var(--text-2)">${escapeHtml(j.notes)}</p>` : ''}
+            ${(j.notesLog || []).map(n => `<p style="font-size:.83rem;line-height:1.65;color:var(--text-2);margin-top:8px">${escapeHtml(n.text)} <span style="color:var(--muted);font-size:.7rem">— ${n.by}, ${n.time}</span></p>`).join('')}
+            <div style="display:flex;gap:8px;margin-top:10px">
+              <input class="m-input" id="job-note-input" placeholder="Add a note for the crew…" onkeydown="if(event.key==='Enter')AdminView.addJobNote('${j.id}')" />
+              <button class="btn ghost" onclick="AdminView.addJobNote('${j.id}')">Add</button>
+            </div>
+          </div>
           ${jobReports.length ? `<div class="m-section"><h4>Field reports (${jobReports.length})</h4>${jobReports.map(reportCard).join('')}</div>` : ''}
         </div>
       </div>`;
+  }
+
+  /* ============================================================
+     Create forms (new job / new part / new lead)
+     ============================================================ */
+
+  let newJobOpen = false, newPartOpen = false, newLeadOpen = false;
+
+  function formField(id, label, placeholder, half) {
+    return `<div class="f-field ${half ? 'half' : ''}"><label for="${id}">${label}</label><input class="m-input" id="${id}" placeholder="${placeholder}" /></div>`;
+  }
+
+  function renderNewJobModal() {
+    if (!newJobOpen) return '';
+    return `
+      <div class="modal-overlay" onclick="if(event.target===this)AdminView.closeNewJob()">
+        <div class="modal" style="max-width:560px">
+          <div class="m-head"><h2>New job</h2><button class="m-close" onclick="AdminView.closeNewJob()">${icon('x', 15)}</button></div>
+          <div class="m-sub">Creates a real entry in this demo — it shows up in the jobs table, filters, and dispatch immediately.</div>
+          <div class="f-grid">
+            ${formField('nj-name', 'Job name', 'e.g. Harborview Office Tower')}
+            ${formField('nj-client', 'Client', 'e.g. Harborview Properties', true)}
+            ${formField('nj-value', 'Contract value', 'e.g. $12,500', true)}
+            ${formField('nj-system', 'System / scope', 'e.g. Burglar alarm + access control (4 doors)')}
+            ${formField('nj-address', 'Address', 'e.g. 400 E Pratt St, Baltimore, MD', true)}
+            ${formField('nj-target', 'Target date', 'e.g. Jul 24, 2026', true)}
+            <div class="f-field half"><label for="nj-type">Type</label>
+              <select class="m-select" id="nj-type" style="width:100%">
+                <option>Install</option><option>Service</option><option>Project</option>
+              </select>
+            </div>
+            <div class="f-field half"><label for="nj-state">State</label>
+              <select class="m-select" id="nj-state" style="width:100%">
+                <option>MD</option><option>VA</option><option>DE</option><option>PA</option><option>NJ</option><option>NY</option>
+              </select>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:20px">
+            <button class="btn primary" onclick="AdminView.saveNewJob()">Create job</button>
+            <button class="btn ghost" onclick="AdminView.closeNewJob()">Cancel</button>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  function renderNewPartModal() {
+    if (!newPartOpen) return '';
+    return `
+      <div class="modal-overlay" onclick="if(event.target===this)AdminView.closeNewPart()">
+        <div class="modal" style="max-width:480px">
+          <div class="m-head"><h2>Add inventory part</h2><button class="m-close" onclick="AdminView.closeNewPart()">${icon('x', 15)}</button></div>
+          <div class="f-grid" style="margin-top:14px">
+            ${formField('np-name', 'Part name', 'e.g. Bosch B915 Keypad')}
+            ${formField('np-sku', 'SKU', 'e.g. BSH-B915', true)}
+            ${formField('np-unit', 'Unit cost', 'e.g. $74', true)}
+            ${formField('np-stock', 'Stock on hand', 'e.g. 12', true)}
+            ${formField('np-min', 'Minimum level', 'e.g. 6', true)}
+          </div>
+          <div style="display:flex;gap:8px;margin-top:20px">
+            <button class="btn primary" onclick="AdminView.saveNewPart()">Add part</button>
+            <button class="btn ghost" onclick="AdminView.closeNewPart()">Cancel</button>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  function renderNewLeadModal() {
+    if (!newLeadOpen) return '';
+    return `
+      <div class="modal-overlay" onclick="if(event.target===this)AdminView.closeNewLead()">
+        <div class="modal" style="max-width:480px">
+          <div class="m-head"><h2>Add lead</h2><button class="m-close" onclick="AdminView.closeNewLead()">${icon('x', 15)}</button></div>
+          <div class="m-sub">New leads land in the first column and the AI nurture sequence picks them up automatically.</div>
+          <div class="f-grid">
+            ${formField('nl-company', 'Company', 'e.g. Keystone Pharmacy Group')}
+            ${formField('nl-contact', 'Contact', 'e.g. T. Nguyen', true)}
+            ${formField('nl-value', 'Estimated value', 'e.g. $7–9k', true)}
+          </div>
+          <div style="display:flex;gap:8px;margin-top:20px">
+            <button class="btn primary" onclick="AdminView.saveNewLead()">Add lead</button>
+            <button class="btn ghost" onclick="AdminView.closeNewLead()">Cancel</button>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  /* ---------- edit actions ---------- */
+
+  function val(id) { const el = document.getElementById(id); return el ? el.value.trim() : ''; }
+
+  function saveNewJob() {
+    const name = val('nj-name');
+    if (!name) { App.toast('Give the job a name first'); return; }
+    getJobs().push({
+      id: 'j-' + Date.now(),
+      type: val('nj-type') || 'Install', priority: 'normal',
+      name,
+      client: val('nj-client') || name,
+      system: val('nj-system') || 'Scope to be confirmed',
+      address: val('nj-address') || 'Address TBD',
+      state: val('nj-state') || 'MD',
+      window: 'To be scheduled',
+      status: 'scheduled', progress: 0,
+      startDate: 'TBD', targetDate: val('nj-target') || 'TBD',
+      assigned: [],
+      value: val('nj-value') || '—',
+      risk: { level: 'ok', reason: 'Just created — AI will assess once the job is scheduled and crewed.' },
+      tasks: [], notes: '', notesLog: [],
+    });
+    newJobOpen = false;
+    saveState();
+    App.toast('Job created — it\'s in the table and dispatch now');
+    render();
+  }
+
+  function saveNewPart() {
+    const name = val('np-name');
+    if (!name) { App.toast('Give the part a name first'); return; }
+    getInventory().push({
+      sku: val('np-sku') || ('SKU-' + String(Date.now()).slice(-5)),
+      name,
+      stock: parseInt(val('np-stock'), 10) || 0,
+      min: parseInt(val('np-min'), 10) || 1,
+      usedToday: 0,
+      unit: val('np-unit') || '—',
+    });
+    newPartOpen = false;
+    saveState();
+    App.toast('Part added to warehouse stock');
+    render();
+  }
+
+  function saveNewLead() {
+    const company = val('nl-company');
+    if (!company) { App.toast('Give the lead a company name first'); return; }
+    getPipeline()[0].leads.unshift({
+      company,
+      contact: val('nl-contact') || '—',
+      value: val('nl-value') || 'TBD',
+      source: 'Added manually · just now',
+      ai: 'AI intro email queued — will send within 15 minutes and start the nurture sequence.',
+    });
+    newLeadOpen = false;
+    saveState();
+    App.toast('Lead added — AI nurture sequence started');
+    render();
+  }
+
+  function adjStock(sku, delta) {
+    const part = getInventory().find(i => i.sku === sku);
+    if (!part) return;
+    part.stock = Math.max(0, part.stock + delta);
+    saveState();
+    render();
+  }
+
+  function setJobStatus(jobId, status) {
+    const j = jobById(jobId);
+    if (!j) return;
+    j.status = status;
+    if (status === 'completed') j.progress = 100;
+    if (status === 'in-progress' && j.progress === 0) j.progress = 5;
+    saveState();
+    App.toast('Status updated — reflected across the dashboard' + (status === 'completed' ? ' · invoice drafting' : ''));
+    render();
+  }
+
+  function adjProgress(jobId, delta) {
+    const j = jobById(jobId);
+    if (!j) return;
+    j.progress = Math.max(0, Math.min(100, j.progress + delta));
+    if (j.progress === 100) j.status = 'completed';
+    else if (j.progress > 0 && j.status === 'scheduled') j.status = 'in-progress';
+    saveState();
+    render();
+  }
+
+  function addJobNote(jobId) {
+    const text = val('job-note-input');
+    if (!text) return;
+    const j = jobById(jobId);
+    if (!j) return;
+    j.notesLog = j.notesLog || [];
+    j.notesLog.push({ text, by: 'W. Adams', time: nowTimeString() });
+    saveState();
+    App.toast('Note saved — crew sees it in the technician app');
+    render();
+  }
+
+  function advanceLead(stageIdx, leadIdx) {
+    const cols = getPipeline();
+    const lead = cols[stageIdx].leads.splice(leadIdx, 1)[0];
+    if (!lead) return;
+    const nextStage = cols[stageIdx + 1];
+    lead.source = 'Moved ' + nowTimeString();
+    if (nextStage.stage === 'Won This Month') {
+      lead.ai = 'Deal won — AI is converting this to a job, reserving materials, and sending the deposit invoice.';
+    } else if (nextStage.stage === 'Quote Sent') {
+      lead.ai = 'Quote packet generated from the site-survey template — AI tracks opens and nudges in 3 days.';
+    } else {
+      lead.ai = 'AI nurture sequence active — follow-up cadence adjusted for this stage.';
+    }
+    nextStage.leads.unshift(lead);
+    saveState();
+    App.toast('Lead moved to ' + nextStage.stage);
+    render();
+  }
+
+  function markPaid(invId) {
+    const iv = getInvoices().find(i => i.id === invId);
+    if (!iv) return;
+    iv.status = 'paid';
+    saveState();
+    App.toast(iv.id + ' marked paid — receipt emailed to ' + iv.client);
+    render();
   }
 
   /* ============================================================
@@ -915,6 +1161,9 @@ const AdminView = (() => {
       ${renderCopilot()}
       ${renderModal()}
       ${renderBriefModal()}
+      ${renderNewJobModal()}
+      ${renderNewPartModal()}
+      ${renderNewLeadModal()}
       <div class="demo-banner">Demo · Intel Surveillance Field Platform by AutoNestLabs</div>
     `;
 
@@ -944,5 +1193,14 @@ const AdminView = (() => {
     copilotAsk,
     copilotAskInput,
     stopTicker,
+    // editing API
+    adjStock, setJobStatus, adjProgress, addJobNote, advanceLead, markPaid,
+    saveNewJob, saveNewPart, saveNewLead,
+    openNewJob() { newJobOpen = true; render(); },
+    closeNewJob() { newJobOpen = false; render(); },
+    openNewPart() { newPartOpen = true; render(); },
+    closeNewPart() { newPartOpen = false; render(); },
+    openNewLead() { newLeadOpen = true; render(); },
+    closeNewLead() { newLeadOpen = false; render(); },
   };
 })();

@@ -4,7 +4,7 @@
    so clock-ins and reports survive a page refresh.
    ============================================================ */
 
-const IS_STORE_KEY = 'intel-surveillance-demo-v2';
+const IS_STORE_KEY = 'intel-surveillance-demo-v3';
 
 const DemoData = {
 
@@ -387,6 +387,7 @@ function loadState() {
     chatLog: [],
     copilotLog: [],             // admin AI copilot transcript
     autoRules: { checkin12: true, reviews: true, faults: true, invoicing: true, po: false, nurture: true },
+    data: null,                 // live editable copy of jobs/inventory/pipeline/invoices
   };
 }
 
@@ -396,10 +397,33 @@ function saveState() {
 
 let AppState = loadState();
 
+/* Materialize an editable copy of the demo data on first load.
+   Everything the client can edit lives in AppState.data and
+   persists in localStorage; DemoData stays as the pristine seed. */
+if (!AppState.data || !AppState.data.jobs) {
+  AppState.data = JSON.parse(JSON.stringify({
+    jobs: DemoData.jobs,
+    inventory: DemoData.inventory,
+    pipeline: DemoData.pipeline,
+    invoices: DemoData.invoices,
+  }));
+  saveState();
+}
+
+function getJobs()      { return AppState.data.jobs; }
+function getInventory() { return AppState.data.inventory; }
+function getPipeline()  { return AppState.data.pipeline; }
+function getInvoices()  { return AppState.data.invoices; }
+
+function resetDemoData() {
+  try { localStorage.removeItem(IS_STORE_KEY); } catch (e) {}
+  location.reload();
+}
+
 /* ---------- Helpers ---------- */
 
 function techById(id) { return DemoData.technicians.find(t => t.id === id); }
-function jobById(id)  { return DemoData.jobs.find(j => j.id === id); }
+function jobById(id)  { return getJobs().find(j => j.id === id); }
 
 function initials(name) {
   return name.split(' ').map(p => p[0]).join('').slice(0, 2).toUpperCase();

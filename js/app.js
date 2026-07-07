@@ -64,7 +64,8 @@ const App = (() => {
 
           <div class="login-foot">
             Demo environment with sample data only — no real customer information.
-            Reset anytime: clock-ins, scans, and reports persist in this browser session.
+            Everything you edit (inventory, jobs, leads, reports) is saved in this browser.
+            <button class="link-btn" style="color:#7d9bea" onclick="resetDemoData()">Reset demo data</button>
           </div>
         </div>
       </div>

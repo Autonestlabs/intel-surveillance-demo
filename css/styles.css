@@ -873,3 +873,47 @@ textarea.t-input:focus, input.t-input:focus { outline: none; border-color: #4050
   padding: 6px; text-align: center; color: #626d7d;
 }
 .photo-thumb b { font-size: .55rem; color: #7d8590; font-weight: 600; line-height: 1.35; }
+
+/* ============ Edit controls (steppers, selects, forms) ============ */
+
+.stepper {
+  display: inline-flex; align-items: center; gap: 2px;
+  border: 1px solid var(--border-strong); border-radius: 8px; overflow: hidden;
+  background: var(--surface);
+}
+.stepper button {
+  width: 30px; height: 30px; border: none; background: none;
+  font-size: .95rem; font-weight: 600; color: var(--text-2); line-height: 1;
+}
+.stepper button:hover { background: #f3f4f6; color: var(--text); }
+.stepper span { min-width: 44px; text-align: center; font-size: .82rem; font-weight: 650; }
+.stepper.sm button { width: 22px; height: 22px; font-size: .8rem; }
+.stepper.sm span { min-width: 30px; font-size: .78rem; }
+
+.m-select {
+  border: 1px solid var(--border-strong); border-radius: 8px; background: var(--surface);
+  font-size: .8rem; font-weight: 550; color: var(--text); padding: 7px 10px;
+}
+.m-select:focus { outline: none; border-color: var(--accent); }
+.m-input {
+  flex: 1; border: 1px solid var(--border-strong); border-radius: 8px;
+  padding: 8px 12px; font-size: .82rem; width: 100%;
+}
+.m-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+
+.f-grid { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 6px; }
+.f-field { width: 100%; }
+.f-field.half { width: calc(50% - 6px); }
+.f-field label {
+  display: block; font-size: .66rem; font-weight: 650; text-transform: uppercase;
+  letter-spacing: .07em; color: var(--muted); margin-bottom: 5px;
+}
+
+.k-advance {
+  width: 100%; margin-top: 9px; background: none;
+  border: 1px dashed var(--border-strong); border-radius: 7px;
+  font-size: .68rem; font-weight: 600; color: var(--text-2); padding: 6px 8px;
+  display: inline-flex; align-items: center; justify-content: center; gap: 5px;
+  transition: all .13s;
+}
+.k-advance:hover { border-color: var(--accent); color: var(--accent); border-style: solid; }

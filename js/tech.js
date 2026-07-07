@@ -64,13 +64,27 @@ const TechView = (() => {
   }
 
   function scanPart() {
-    const candidates = DemoData.inventory.filter(i => i.usedToday > 0 || i.stock > 10);
+    const candidates = getInventory().filter(i => i.stock > 0);
+    if (!candidates.length) { App.toast('No stock left to scan — add parts on the office side'); return; }
     const part = candidates[Math.floor(Math.random() * candidates.length)];
+    part.stock -= 1;                 // really deducts from the shared inventory
+    part.usedToday += 1;
     AppState.scannedParts.unshift({
       sku: part.sku, name: part.name, jobId: openJobId || 'j2', time: nowTimeString(),
     });
     saveState();
-    App.toast('Scanned: ' + part.name + ' — logged to job & deducted from inventory');
+    App.toast('Scanned: ' + part.name + ' — deducted from warehouse stock (' + part.stock + ' left)');
+    render();
+  }
+
+  function addTask(jobId) {
+    const input = document.getElementById('tt-new-task');
+    if (!input || !input.value.trim()) return;
+    const j = jobById(jobId);
+    if (!j) return;
+    j.tasks.push({ id: jobId + '-t' + Date.now(), label: input.value.trim(), done: false });
+    saveState();
+    App.toast('Task added — office sees it on the job');
     render();
   }
 
@@ -201,7 +215,7 @@ const TechView = (() => {
   }
 
   function renderToday() {
-    const myJobs = DemoData.jobs.filter(j => j.assigned.includes(TECH_ID) && j.status !== 'completed');
+    const myJobs = getJobs().filter(j => j.assigned.includes(TECH_ID) && j.status !== 'completed');
     return `
       ${renderClockCard()}
       <div class="t-section-title">Today's assignments</div>
@@ -246,6 +260,10 @@ const TechView = (() => {
             <span class="cb">${icon('check', 11)}</span><span>${escapeHtml(t.label)}</span>
           </div>`;
         }).join('') : '<div class="empty-note">No task checklist for this job.</div>'}
+        <div class="chat-input-row" style="margin-top:4px">
+          <input class="t-input" id="tt-new-task" placeholder="Add a task…" onkeydown="if(event.key==='Enter')TechView.addTask('${j.id}')" />
+          <button class="btn t-quick" style="flex-shrink:0" onclick="TechView.addTask('${j.id}')">Add</button>
+        </div>
 
         <div class="t-section-title">Materials & photos</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
@@ -262,17 +280,18 @@ const TechView = (() => {
           ${photos.map(p => `<div class="photo-thumb">${icon('camera', 16)}<b>${escapeHtml(p.label)}</b></div>`).join('')}
         </div>` : ''}
 
-        ${j.notes ? `
+        ${(j.notes || (j.notesLog || []).length) ? `
         <div class="t-section-title">Job notes from office</div>
         <div class="ai-panel" style="border-left-color:#40506e">
-          <p>${escapeHtml(j.notes)}</p>
+          ${j.notes ? `<p>${escapeHtml(j.notes)}</p>` : ''}
+          ${(j.notesLog || []).map(n => `<p style="margin-top:8px">${escapeHtml(n.text)} <span style="color:#626d7d;font-size:.68rem">— ${n.by}, ${n.time}</span></p>`).join('')}
         </div>` : ''}
       </div>`;
   }
 
   function renderJobs() {
     if (openJobId) return renderJobDetail(jobById(openJobId));
-    const myJobs = DemoData.jobs.filter(j => j.assigned.includes(TECH_ID));
+    const myJobs = getJobs().filter(j => j.assigned.includes(TECH_ID));
     return `
       <div class="t-section-title" style="margin-top:4px">My jobs</div>
       ${myJobs.map(renderJobCard).join('')}
@@ -406,6 +425,7 @@ const TechView = (() => {
     clockToggle,
     toggleTask,
     scanPart,
+    addTask,
     addPhoto,
     startVoice,
     generateSummary,

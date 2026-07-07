@@ -23,9 +23,13 @@ It exists to show the product direction; most workflows are simulated.
 - 30-second end-of-day reports — tech types rough notes, AI writes the report
 - AI assistant: schedule, job notes, parts stock, hours
 
+The demo is **editable end to end** — the client can actually use it: adjust
+inventory stock or add parts, create jobs, change job status/progress, leave
+notes for the crew, advance pipeline leads, add leads, mark invoices paid, add
+tasks and scan parts in the tech app (scans really deduct warehouse stock).
 Actions taken in the technician app (clock-ins, scans, submitted reports) appear
-live on the office dashboard. State persists in `localStorage` — use the browser
-console `localStorage.clear()` to reset the demo.
+live on the office dashboard. Everything persists in `localStorage`; a
+**Reset demo data** link on the landing page restores the original dataset.
 
 ## Running it
 
